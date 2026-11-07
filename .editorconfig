@@ -81,6 +81,9 @@ dotnet_naming_symbols.constants.applicable_kinds = field, local
 dotnet_naming_symbols.constants.required_modifiers = const
 dotnet_naming_style.pascal.capitalization = pascal_case
 
+# Naming rules are only enforced at build time when IDE1006 has an explicit severity.
+dotnet_diagnostic.IDE1006.severity = warning
+
 # --- Analyzer severities beyond the recommended set ---
 # Unused usings and unnecessary code are errors, not noise.
 dotnet_diagnostic.IDE0005.severity = warning
