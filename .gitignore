@@ -1,0 +1,40 @@
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+BenchmarkDotNet.Artifacts/
+*.trx
+coverage*.xml
+coverage*.json
+
+# --- Node / pnpm ---
+node_modules/
+.pnpm-store/
+dist/
+dist-electron/
+out/
+release/
+storybook-static/
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+pnpm-debug.log*
+
+# --- Environment and secrets (never commit) ---
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+*.publishsettings
+
+# --- Editors and OS ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
