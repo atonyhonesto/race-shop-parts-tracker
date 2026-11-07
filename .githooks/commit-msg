@@ -1,0 +1,5 @@
+#!/bin/sh
+# Rejects commit messages that do not follow Conventional Commits.
+# Enabled by `pnpm install` (the root "prepare" script sets core.hooksPath=.githooks).
+# The same check runs in CI, so skipping it with --no-verify only delays the failure.
+exec node scripts/lint-commit-msg.mjs "$1"
