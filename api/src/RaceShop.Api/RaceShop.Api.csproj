@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- Composition root and HTTP surface (minimal APIs). The only project that knows every layer (ADR 0001). -->
+  <ItemGroup>
+    <ProjectReference Include="..\RaceShop.Application\RaceShop.Application.csproj" />
+    <ProjectReference Include="..\RaceShop.Infrastructure\RaceShop.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
