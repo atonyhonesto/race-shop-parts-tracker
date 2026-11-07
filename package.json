@@ -1,0 +1,31 @@
+{
+  "name": "race-shop-parts-tracker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Parts and inventory tracker for a race team: serialized parts, life limits, and installs per car.",
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "test": "node --test scripts/lint-commit-msg.test.mjs && pnpm -r --if-present test",
+    "lint:commits": "node scripts/lint-commit-msg.mjs --range"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}
