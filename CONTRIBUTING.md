@@ -30,6 +30,8 @@ dotnet tool restore      # pinned dotnet-ef for migrations
 
 dotnet build api/RaceShop.slnx
 dotnet test --solution api/RaceShop.slnx   # database tests start SQL Server in Docker
+
+pnpm build               # builds ui-wc and api-client first; apps type-check against them
 pnpm lint && pnpm test
 ```
 
@@ -43,7 +45,7 @@ cp .env.example .env     # then set MSSQL_SA_PASSWORD to a password of your own
 docker compose up -d sql
 
 dotnet user-secrets set ConnectionStrings:RaceShop \
-  "Server=localhost,1433;Database=RaceShop;User Id=sa;Password=<your password>;TrustServerCertificate=True" \
+  "Server=127.0.0.1,1433;Database=RaceShop;User Id=sa;Password=<your password>;TrustServerCertificate=True" \
   --project api/src/RaceShop.Api
 
 dotnet run --project api/src/RaceShop.Api   # http://localhost:5080, migrates and seeds sample data
@@ -55,14 +57,42 @@ Locally you don't need an Entra ID tenant. In Development the API uses a header-
 refuses to start with this sign-in outside Development and Testing. To use a real tenant, see
 [docs/auth/entra-setup.md](docs/auth/entra-setup.md).
 
+> Use `127.0.0.1`, not `localhost`: compose publishes SQL Server on IPv4 only, and on Windows
+> `localhost` can resolve to IPv6 first and time out.
+
+### Run the web app
+
+```sh
+cp apps/web/.env.example apps/web/.env.local   # VITE_AUTH_MODE=dev: sign in with a role picker
+pnpm --filter @raceshop/web dev                 # http://localhost:5173, proxies /api to :5080
+```
+
+Storybook: `pnpm --filter @raceshop/storybook dev` (http://localhost:6006). The life gauge in plain
+HTML, without a framework: `pnpm --filter @raceshop/ui-wc demo`.
+
+### End-to-end tests
+
+The Playwright smoke test starts the API (Development mode, seeded data) and the built web app
+itself. It needs a SQL Server and a connection string:
+
+```sh
+docker compose up -d sql
+export E2E_CONNECTION_STRING="Server=127.0.0.1,1433;Database=RaceShopE2E;User Id=sa;Password=<your password>;TrustServerCertificate=True"
+pnpm --filter @raceshop/web exec playwright install chromium   # once
+pnpm --filter @raceshop/web e2e
+```
+
 ## 2. Repository layout
 
 ```text
 api/                 .NET 10 solution (layered, see docs/adr/0001)
   src/               Domain, Application, Infrastructure, Api
   tests/             xUnit unit tests; integration tests (in-memory API + SQL Server container)
-apps/                runnable front ends (web, desktop, storybook)
-packages/            shared TypeScript packages (ui, api-client)
+apps/web             React + Vite app (MSAL sign-in, TanStack Query, lazy routes, e2e/)
+apps/storybook       stories for every ui component, axe checks over every story
+packages/ui          shared React components and design tokens
+packages/ui-wc       framework-agnostic web components (Stencil): <life-gauge>
+packages/api-client  TypeScript client generated from openapi.json
 docs/adr/            architecture decision records
 scripts/             repo tooling (no dependencies)
 .github/             CI workflows, PR and issue templates, CODEOWNERS
@@ -80,6 +110,9 @@ scripts/             repo tooling (no dependencies)
 | Lint TypeScript           | `pnpm lint` (`pnpm lint:fix` to autofix)                                                            |
 | Format everything else    | `pnpm format`                                                                                       |
 | Type-check / test / build | `pnpm typecheck`, `pnpm test`, `pnpm build`                                                         |
+| API contract changed      | `pnpm api:contract` (refreshes openapi.json and the generated client; commit both)                  |
+| Bundle-size budget        | `pnpm build && pnpm bundle:check` (budgets in `apps/web/bundle-budget.json`)                        |
+| Accessibility of stories  | `pnpm --filter @raceshop/storybook build && pnpm --filter @raceshop/storybook test:a11y`            |
 
 ## 4. Quality gates
 
@@ -94,8 +127,17 @@ push, run the same checks locally:
   hand-format.
 - **Tests:** all tests pass. New behavior comes with tests; bug fixes come with a test that
   failed before the fix.
+- **Accessibility (WCAG 2.2 AA):** axe checks every Storybook story in light and dark themes and
+  every page in the end-to-end smoke test. Every exported `ui` component needs a story (a test
+  checks this). Use native elements (button, label, dialog, table) before ARIA.
+- **API contract:** `packages/api-client/openapi.json` must match the API, and the generated
+  client must match `openapi.json`. Run `pnpm api:contract` after changing an endpoint or a
+  response type.
+- **Bundle size:** the production web build must fit the gzip budgets in
+  `apps/web/bundle-budget.json`, and must not contain the development sign-in.
 - **Dependencies:** lock files are committed and CI restores in locked mode. NuGet audit fails the
-  build on a known-vulnerable package. pnpm won't install a release younger than 3 days.
+  build on a known-vulnerable package. pnpm won't install a release younger than 3 days, and
+  dependency install scripts are blocked unless `pnpm-workspace.yaml` allows them.
 
 Don't silence a rule to get green. If a rule is wrong for a case, suppress it as narrowly as you
 can (one line), say why in a comment, and expect the reviewer to ask about it.
