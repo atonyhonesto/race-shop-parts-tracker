@@ -18,6 +18,7 @@ export default defineConfig(
     'api/**',
     '**/dist/**',
     '**/dist-electron/**',
+    '**/dist-e2e/**',
     '**/release/**',
     '**/storybook-static/**',
     '**/coverage/**',
