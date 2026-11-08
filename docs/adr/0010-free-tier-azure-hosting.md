@@ -36,16 +36,17 @@ Security choices that cost nothing:
 
 ## Consequences: what free costs us
 
-| Limit                                    | Effect                                                    | Mitigation                                                               |
-| ---------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
-| F1 has no always-on                      | The API sleeps when idle; the first request takes seconds | Client retries; deploy smoke test waits; runbook explains                |
-| SQL auto-pauses after 60 min             | First query after a pause waits up to about a minute      | `EnableRetryOnFailure`, `Connect Timeout=60`, 5xx retries in the web app |
-| SQL free allowance (100k vCore-s/month)  | A chatty probe could exhaust it in days                   | `/health` never touches the DB; only `/health/ready` does, on deploy     |
-| F1: 60 CPU min/day                       | Heavy load stops the app until tomorrow                   | It's a demo; the perf case study is measured locally (docs/perf)         |
-| No deployment slots on F1                | No zero-downtime swap; rollback is a redeploy             | Re-run an earlier successful Deploy run (runbook)                        |
-| No VNet/private endpoints on these tiers | The database has a public endpoint                        | Entra-only auth plus an IP-restricted firewall                           |
-| Unsigned desktop installer               | SmartScreen warning                                       | Checksums plus a build-provenance attestation (ADR 0009)                 |
-| Telemetry capped                         | Data may stop late in a busy day                          | 25% sampling; health probes not traced                                   |
+| Limit                                         | Effect                                                    | Mitigation                                                                                                                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F1 has no always-on                           | The API sleeps when idle; the first request takes seconds | Client retries; deploy smoke test waits; runbook explains                                                                                                                                        |
+| SQL auto-pauses after 60 min                  | First query after a pause waits up to about a minute      | `EnableRetryOnFailure`, `Connect Timeout=60`, 5xx retries in the web app                                                                                                                         |
+| SQL free allowance (100k vCore-s/month)       | A chatty probe could exhaust it in days                   | `/health` never touches the DB; only `/health/ready` does, on deploy                                                                                                                             |
+| F1: 60 CPU min/day                            | Heavy load stops the app until tomorrow                   | It's a demo; the perf case study is measured locally (docs/perf)                                                                                                                                 |
+| No deployment slots on F1                     | No zero-downtime swap; rollback is a redeploy             | Re-run an earlier successful Deploy run (runbook)                                                                                                                                                |
+| No VNet/private endpoints on these tiers      | The database has a public endpoint                        | Entra-only auth plus an IP-restricted firewall                                                                                                                                                   |
+| Unsigned desktop installer                    | SmartScreen warning                                       | Checksums plus a build-provenance attestation (ADR 0009)                                                                                                                                         |
+| SQL region may be restricted per subscription | `RegionDoesNotAllowProvisioning` on deploy                | `SQL_LOCATION` puts only the database in another region; inter-region traffic is billed (~$0.02/GB, effectively $0 for a demo, caught by the budget alert) until the original region is approved |
+| Telemetry capped                              | Data may stop late in a busy day                          | 25% sampling; health probes not traced                                                                                                                                                           |
 
 Moving to paid tiers changes SKUs in Bicep, not the architecture. B1 plus always-on and deployment
 slots would remove the first, fourth and fifth rows.

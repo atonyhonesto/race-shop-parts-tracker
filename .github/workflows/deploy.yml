@@ -53,6 +53,7 @@ jobs:
       ENTRA_API_CLIENT_ID: ${{ vars.ENTRA_API_CLIENT_ID }}
       BUDGET_EMAIL: ${{ vars.BUDGET_EMAIL }}
       BUDGET_START_DATE: ${{ vars.BUDGET_START_DATE }}
+      SQL_LOCATION: ${{ vars.SQL_LOCATION }} # optional; empty = same region as the API
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -11,6 +11,9 @@ targetScope = 'resourceGroup'
 @description('Region for the API, database and monitoring.')
 param location string = resourceGroup().location
 
+@description('Region for Azure SQL. Empty means the same region as the API. Azure sometimes stops new SQL servers in a region for a subscription (RegionDoesNotAllowProvisioning); this moves only the database (docs/runbook.md).')
+param sqlLocation string = ''
+
 @description('Region for the Static Web Apps (Free is offered in a few regions only).')
 @allowed(['eastus2', 'centralus', 'westus2', 'westeurope', 'eastasia'])
 param staticWebAppLocation string = 'eastus2'
@@ -39,7 +42,10 @@ param budgetStartDate string
 
 // Names are deterministic per resource group, so redeploys update in place.
 var baseName = '${namePrefix}-${take(uniqueString(resourceGroup().id), 6)}'
-var sqlServerName = '${baseName}-sql'
+var effectiveSqlLocation = empty(sqlLocation) ? location : sqlLocation
+// The region is part of the server name: a server can't move, so changing SQL_LOCATION creates a
+// new server beside the old one instead of failing (see docs/deploy/azure-setup.md, "SQL region").
+var sqlServerName = '${baseName}-sql-${effectiveSqlLocation}'
 var databaseName = 'raceshop'
 
 module monitoring 'modules/monitoring.bicep' = {
@@ -83,7 +89,7 @@ module api 'modules/appService.bicep' = {
 module sql 'modules/sql.bicep' = {
   name: 'sql'
   params: {
-    location: location
+    location: effectiveSqlLocation
     serverName: sqlServerName
     databaseName: databaseName
     adminGroupName: sqlAdminGroupName
