@@ -1,0 +1,15 @@
+{
+  "$comment": "Gzip budgets for the production build (scripts/check-bundle-size.mjs). Set about 10% above the measured size when added; raising one needs a reviewed reason. docs/perf will tighten these.",
+  "dist": "dist/assets",
+  "rules": [
+    { "name": "Total JavaScript", "pattern": "\\.js$", "maxGzipKb": 220 },
+    { "name": "Largest single chunk", "pattern": "\\.js$", "maxGzipKb": 75, "each": true },
+    { "name": "Route: parts search", "pattern": "^PartsPage-.*\\.js$", "maxGzipKb": 2 },
+    { "name": "Route: part detail", "pattern": "^PartDetailPage-.*\\.js$", "maxGzipKb": 1.5 },
+    { "name": "Route: serialized part", "pattern": "^SerializedPartPage-.*\\.js$", "maxGzipKb": 3 },
+    { "name": "Route: cars", "pattern": "^CarsPage-.*\\.js$", "maxGzipKb": 1 },
+    { "name": "Life gauge web component", "pattern": "^LifeGauge-.*\\.js$", "maxGzipKb": 8.5 },
+    { "name": "Total CSS", "pattern": "\\.css$", "maxGzipKb": 5 }
+  ],
+  "forbiddenStrings": ["X-Dev-User", "Development sign-in"]
+}
