@@ -1,6 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Adapters: EF Core, SQL Server, telemetry. Implements Application ports (ADR 0001). -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!-- Build-time only: lets `dotnet ef` create migrations. PrivateAssets keeps it out of the Api's runtime. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RaceShop.Application\RaceShop.Application.csproj" />
   </ItemGroup>
 </Project>

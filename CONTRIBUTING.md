@@ -7,17 +7,18 @@ then explains how we work: branches, commits, pull requests, and the standards C
 
 ### Prerequisites
 
-| Tool                                   | Version                        | Check              |
-| -------------------------------------- | ------------------------------ | ------------------ |
-| Git                                    | any recent                     | `git --version`    |
-| .NET SDK                               | 10.0 (pinned in `global.json`) | `dotnet --version` |
-| Node.js                                | 24 LTS (pinned in `.nvmrc`)    | `node --version`   |
-| pnpm (via Corepack, bundled with Node) | pinned in `package.json`       | `pnpm --version`   |
+| Tool                                      | Version                        | Check              |
+| ----------------------------------------- | ------------------------------ | ------------------ |
+| Git                                       | any recent                     | `git --version`    |
+| .NET SDK                                  | 10.0 (pinned in `global.json`) | `dotnet --version` |
+| Node.js                                   | 24 LTS (pinned in `.nvmrc`)    | `node --version`   |
+| pnpm (via Corepack, bundled with Node)    | pinned in `package.json`       | `pnpm --version`   |
+| Docker Desktop (or another Docker engine) | any recent; must be running    | `docker info`      |
 
 > **Windows:** if Node is installed under `C:\Program Files`, run `corepack enable` once from an
 > elevated terminal. Installs fail on Node versions older than 22.13 (`engineStrict`).
 
-### Commands
+### Build and test
 
 ```sh
 git clone <repo-url> race-shop-parts-tracker
@@ -25,20 +26,41 @@ cd race-shop-parts-tracker
 
 corepack enable          # makes the pinned pnpm version available
 pnpm install             # installs JS tooling and enables the commit-msg git hook
+dotnet tool restore      # pinned dotnet-ef for migrations
 
 dotnet build api/RaceShop.slnx
-dotnet test --solution api/RaceShop.slnx
+dotnet test --solution api/RaceShop.slnx   # database tests start SQL Server in Docker
 pnpm lint && pnpm test
 ```
 
-If all four commands pass, you are set up.
+If these pass, you are set up. Without Docker, skip the database tests with
+`dotnet test --solution api/RaceShop.slnx --filter-not-trait "Category=Database"`.
+
+### Run the API locally
+
+```sh
+cp .env.example .env     # then set MSSQL_SA_PASSWORD to a password of your own
+docker compose up -d sql
+
+dotnet user-secrets set ConnectionStrings:RaceShop \
+  "Server=localhost,1433;Database=RaceShop;User Id=sa;Password=<your password>;TrustServerCertificate=True" \
+  --project api/src/RaceShop.Api
+
+dotnet run --project api/src/RaceShop.Api   # http://localhost:5080, migrates and seeds sample data
+```
+
+Locally you don't need an Entra ID tenant. In Development the API uses a header-based sign-in:
+`X-Dev-User` signs you in and `X-Dev-Roles` sets your app roles (`CrewChief`, `PartsManager`).
+[RaceShop.Api.http](api/src/RaceShop.Api/RaceShop.Api.http) has ready-made requests. The API
+refuses to start with this sign-in outside Development and Testing. To use a real tenant, see
+[docs/auth/entra-setup.md](docs/auth/entra-setup.md).
 
 ## 2. Repository layout
 
 ```text
 api/                 .NET 10 solution (layered, see docs/adr/0001)
   src/               Domain, Application, Infrastructure, Api
-  tests/             xUnit tests
+  tests/             xUnit unit tests; integration tests (in-memory API + SQL Server container)
 apps/                runnable front ends (web, desktop, storybook)
 packages/            shared TypeScript packages (ui, api-client)
 docs/adr/            architecture decision records
@@ -48,14 +70,16 @@ scripts/             repo tooling (no dependencies)
 
 ## 3. Everyday commands
 
-| Task                      | Command                                     |
-| ------------------------- | ------------------------------------------- |
-| Build the API             | `dotnet build api/RaceShop.slnx`            |
-| Test the API              | `dotnet test --solution api/RaceShop.slnx`  |
-| Fix C# formatting         | `dotnet format api/RaceShop.slnx`           |
-| Lint TypeScript           | `pnpm lint` (`pnpm lint:fix` to autofix)    |
-| Format everything else    | `pnpm format`                               |
-| Type-check / test / build | `pnpm typecheck`, `pnpm test`, `pnpm build` |
+| Task                      | Command                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| Build the API             | `dotnet build api/RaceShop.slnx`                                                                    |
+| Test the API              | `dotnet test --solution api/RaceShop.slnx`                                                          |
+| Fix C# formatting         | `dotnet format api/RaceShop.slnx`                                                                   |
+| Add a migration           | `dotnet ef migrations add <Name> --project api/src/RaceShop.Infrastructure --output-dir Migrations` |
+| Start / stop local SQL    | `docker compose up -d sql` / `docker compose down`                                                  |
+| Lint TypeScript           | `pnpm lint` (`pnpm lint:fix` to autofix)                                                            |
+| Format everything else    | `pnpm format`                                                                                       |
+| Type-check / test / build | `pnpm typecheck`, `pnpm test`, `pnpm build`                                                         |
 
 ## 4. Quality gates
 

@@ -7,12 +7,12 @@ The features are deliberately small. This repository is mainly about engineering
 coding standards, layered design, reviews, performance tuning, security remediation, production
 support, and one set of screens reused on web and desktop.
 
-> **Status:** phase 1 of 7: monorepo scaffold and quality gates. No feature code yet.
+> **Status:** phase 2 of 7: domain, secured API, EF Core migrations, unit and integration tests.
 
 | Phase | Scope                                                       | State       |
 | ----- | ----------------------------------------------------------- | ----------- |
 | 1     | Monorepo scaffold, quality gates, CI, contributing guide    | In review   |
-| 2     | Domain, API, EF Core migrations, unit and integration tests | Not started |
+| 2     | Domain, API, EF Core migrations, unit and integration tests | In review   |
 | 3     | Shared UI and API-client packages, web app, Storybook       | Not started |
 | 4     | Electron app with offline parts list, release workflow      | Not started |
 | 5     | Bicep infrastructure, OIDC deploy to Azure free tiers       | Not started |
