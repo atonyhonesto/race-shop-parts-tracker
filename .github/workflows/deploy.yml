@@ -137,8 +137,12 @@ jobs:
       # WITH SID uses the identity's client ID, so no directory-read permission is needed.
       - name: Grant the API's managed identity read/write access
         run: |
-          # go-sqlcmd from the Microsoft package feed that GitHub's Ubuntu runners already trust.
+          # go-sqlcmd from Microsoft's signed package feed (Microsoft's documented Ubuntu install).
+          # The runner image doesn't configure this feed, so add it with its signing key first.
+          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
+          curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" | sudo tee /etc/apt/sources.list.d/microsoft-prod.list > /dev/null
           sudo apt-get update -qq && sudo apt-get install -y -qq sqlcmd
+          sqlcmd --version
           sqlcmd -S "tcp:${SQL_FQDN},1433" -d "$DATABASE" \
             --authentication-method ActiveDirectoryDefault -b -Q "
               IF DATABASE_PRINCIPAL_ID('${API_IDENTITY_NAME}') IS NULL
