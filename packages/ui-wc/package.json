@@ -1,0 +1,28 @@
+{
+  "name": "@raceshop/ui-wc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-agnostic Web Components (Stencil). Used from React, Electron and plain HTML.",
+  "type": "module",
+  "sideEffects": true,
+  "exports": {
+    "./life-gauge": {
+      "types": "./dist/components/life-gauge.d.ts",
+      "import": "./dist/components/life-gauge.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "stencil build",
+    "demo": "stencil build --dev --watch --serve",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@stencil/core": "^4.45.2",
+    "jsdom": "^30.1.3",
+    "vitest": "^5.1.0"
+  }
+}

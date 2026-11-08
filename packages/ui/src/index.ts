@@ -1,0 +1,21 @@
+// Shared React components for the web and desktop apps. Import '@raceshop/ui/styles.css' once at the app root.
+export { AppShell } from './components/AppShell';
+export type { AppShellProps } from './components/AppShell';
+export { Button } from './components/Button';
+export type { ButtonProps, ButtonVariant } from './components/Button';
+export { DataTable } from './components/DataTable';
+export type { Column, DataTableProps } from './components/DataTable';
+export { Dialog } from './components/Dialog';
+export type { DialogProps } from './components/Dialog';
+export { Alert, Spinner, StatusBadge, VisuallyHidden } from './components/Feedback';
+export type { AlertProps, Tone } from './components/Feedback';
+export { LifeGauge } from './components/LifeGauge';
+export type { LifeGaugeProps, LifeStatus } from './components/LifeGauge';
+export { Pagination } from './components/Pagination';
+export type { PaginationProps } from './components/Pagination';
+export { Select } from './components/Select';
+export type { SelectOption, SelectProps } from './components/Select';
+export { TextField } from './components/TextField';
+export type { TextFieldProps } from './components/TextField';
+export { applyTheme, ThemeToggle } from './components/ThemeToggle';
+export type { ThemePreference } from './components/ThemeToggle';

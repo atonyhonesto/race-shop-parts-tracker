@@ -23,6 +23,10 @@ internal static class InventoryEndpoints
             .WithTags("Parts")
             .ProducesValidationProblem();
 
+        api.MapGet("/parts/{id:guid}", GetPart)
+            .WithName("GetPart")
+            .WithTags("Parts");
+
         api.MapGet("/cars", ListCars)
             .WithName("ListCars")
             .WithTags("Cars");
@@ -61,6 +65,14 @@ internal static class InventoryEndpoints
         [Range(1, 100_000)] int page = 1,
         [Range(1, PartSearch.MaxPageSize)] int pageSize = 25) =>
         TypedResults.Ok(await queries.SearchPartsAsync(new PartSearch(search, page, pageSize), cancellationToken));
+
+    private static async Task<Results<Ok<PartDetails>, NotFound>> GetPart(
+        Guid id,
+        IInventoryQueries queries,
+        CancellationToken cancellationToken) =>
+        await queries.GetPartAsync(id, cancellationToken) is { } details
+            ? TypedResults.Ok(details)
+            : TypedResults.NotFound();
 
     private static async Task<Ok<IReadOnlyList<CarSummary>>> ListCars(
         IInventoryQueries queries,

@@ -15,9 +15,15 @@ node_modules/
 .pnpm-store/
 dist/
 dist-electron/
+dist-e2e/
 out/
 release/
 storybook-static/
+www/
+.stencil/
+playwright-report/
+test-results/
+blob-report/
 *.tsbuildinfo
 .eslintcache
 npm-debug.log*
@@ -27,6 +33,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+!apps/web/.env.e2e
 appsettings.*.local.json
 *.pfx
 *.publishsettings

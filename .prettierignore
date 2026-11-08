@@ -3,3 +3,6 @@
 pnpm-lock.yaml
 **/packages.lock.json
 CHANGELOG.md
+packages/api-client/openapi.json
+packages/api-client/src/generated/
+packages/ui-wc/src/components.d.ts

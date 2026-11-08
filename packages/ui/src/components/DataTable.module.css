@@ -1,0 +1,42 @@
+/* The table scrolls sideways inside its region on narrow screens instead of the whole page. */
+.region {
+  overflow-x: auto;
+  border: 1px solid var(--rs-color-border-subtle);
+  border-radius: var(--rs-radius);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption {
+  padding: var(--rs-space-3) var(--rs-space-4);
+  text-align: start;
+  font-weight: 600;
+}
+
+.table th,
+.table td {
+  padding: var(--rs-space-2) var(--rs-space-4);
+  border-block-start: 1px solid var(--rs-color-border-subtle);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table th {
+  background: var(--rs-color-surface);
+  font-size: var(--rs-font-size-sm);
+  white-space: nowrap;
+}
+
+.end {
+  text-align: end !important;
+}
+
+.empty {
+  padding: var(--rs-space-6) var(--rs-space-4);
+  color: var(--rs-color-text-muted);
+  text-align: center;
+}

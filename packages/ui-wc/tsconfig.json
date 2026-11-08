@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "experimentalDecorators": true,
+    // Stencil strips its decorator imports at compile time; verbatimModuleSyntax would keep them.
+    "verbatimModuleSyntax": false,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
+  },
+  "include": ["src", "test", "stencil.config.ts", "vitest.config.ts"]
+}

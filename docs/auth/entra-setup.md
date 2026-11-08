@@ -161,9 +161,13 @@ assign_role casey@yourtenant.onmicrosoft.com "$CREW_CHIEF_ROLE"
 ```bash
 echo "Tenant ID:   $TENANT_ID"
 echo "API app ID:  $API_APP_ID   (AzureAd:ClientId for the API)"
-echo "SPA app ID:  $SPA_APP_ID   (MSAL clientId in apps/web, phase 3)"
+echo "SPA app ID:  $SPA_APP_ID   (VITE_ENTRA_CLIENT_ID in apps/web)"
 echo "API scope:   api://$API_APP_ID/access_as_user"
 ```
+
+For the web app, put them in `apps/web/.env.local`: `VITE_AUTH_MODE=entra`,
+`VITE_ENTRA_TENANT_ID`, `VITE_ENTRA_CLIENT_ID` (the SPA app ID), and
+`VITE_API_SCOPE=api://<api-app-id>/access_as_user`.
 
 None of these values are secrets. The API validates tokens with Entra ID's public signing keys,
 so there is no client secret or certificate to store.

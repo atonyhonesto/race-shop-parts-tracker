@@ -50,9 +50,9 @@ jobs:
         run: dotnet test --solution api/RaceShop.slnx --configuration Release --no-build
 
   typescript:
-    name: TypeScript format, lint, typecheck, test, build
+    name: Front end build, lint, test, budget, a11y
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -68,10 +68,79 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
+
+      # Build first: apps type-check and lint against the built ui-wc and api-client packages.
+      # The web build is the production one (Entra sign-in), which the budget below measures.
+      - run: pnpm build
+
+      - name: Generated API client matches openapi.json
+        run: |
+          pnpm --filter @raceshop/api-client generate
+          git diff --exit-code -- packages/api-client/src/generated \
+            || { echo "::error::Generated client is stale. Run 'pnpm api:contract' and commit."; exit 1; }
+
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build
+
+      - name: Bundle-size budget (and no dev sign-in in the production build)
+        run: pnpm bundle:check
+
+      - name: Accessibility of every Storybook story (axe, WCAG 2.2 AA)
+        run: |
+          pnpm --filter @raceshop/storybook exec playwright install --with-deps chromium
+          pnpm --filter @raceshop/storybook test:a11y
+
+  e2e:
+    name: End-to-end smoke (API + SQL Server + web, axe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: api/**/packages.lock.json
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @raceshop/ui-wc --filter @raceshop/api-client build
+      - run: pnpm --filter @raceshop/web exec playwright install --with-deps chromium
+
+      # A throwaway SQL Server with a password generated for this run only (masked in logs),
+      # so no credential lives in the repository, not even a test one.
+      - name: Start SQL Server
+        run: |
+          password="E2e-$(openssl rand -hex 16)-Aa1"
+          echo "::add-mask::$password"
+          docker run -d --name sql -p 1433:1433 \
+            -e ACCEPT_EULA=Y -e MSSQL_PID=Developer -e "MSSQL_SA_PASSWORD=$password" \
+            mcr.microsoft.com/mssql/server:2022-latest
+          for i in $(seq 1 30); do
+            docker exec sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$password" -C -Q "SELECT 1" -b >/dev/null 2>&1 && break
+            sleep 3
+          done
+          echo "E2E_CONNECTION_STRING=Server=127.0.0.1,1433;Database=RaceShopE2E;User Id=sa;Password=$password;TrustServerCertificate=True" >> "$GITHUB_ENV"
+
+      - run: pnpm --filter @raceshop/web e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
 
   commits:
     name: Conventional commit messages
@@ -100,7 +169,7 @@ jobs:
   ci-passed:
     name: CI passed
     if: always()
-    needs: [dotnet, typescript, commits]
+    needs: [dotnet, typescript, e2e, commits]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

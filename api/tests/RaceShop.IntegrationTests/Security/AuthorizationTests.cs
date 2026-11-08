@@ -16,6 +16,7 @@ public sealed class AuthorizationTests(AuthorizationTests.Fixture fixture) : ICl
     public static TheoryData<string, string> ReadEndpoints => new()
     {
         { "GET", "/api/parts" },
+        { "GET", $"/api/parts/{AnyId}" },
         { "GET", "/api/cars" },
         { "GET", $"/api/serialized-parts/{AnyId}" },
     };

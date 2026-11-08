@@ -130,6 +130,32 @@ public sealed class InstallFlowTests(SqlServerFixture db)
         Assert.Equal(0, summary.InstalledCount);
     }
 
+    [Fact]
+    public async Task GetPart_ListsSerializedPartsWithLifeStatusAndCar()
+    {
+        var (car, part) = await db.SeedAsync(accumulatedMiles: 450);
+        using var manager = Manager();
+        (await manager.PostAsJsonAsync($"/api/serialized-parts/{part.Id}/install", new { carId = car.Id }, Ct)).EnsureSuccessStatusCode();
+
+        var details = await manager.GetFromJsonAsync<PartDetails>($"/api/parts/{part.PartId}", ApiFactory.Json, Ct);
+
+        var serial = Assert.Single(details!.SerializedParts);
+        Assert.Equal(part.SerialNumber, serial.SerialNumber);
+        Assert.Equal(90.0m, serial.LifeUsedPercent);
+        Assert.Equal(LifeStatus.Warning, serial.LifeStatus);
+        Assert.Equal(car.CarNumber, serial.InstalledOnCarNumber);
+    }
+
+    [Fact]
+    public async Task GetPart_Unknown_Returns404()
+    {
+        using var crewChief = CrewChief();
+
+        using var response = await crewChief.GetAsync($"/api/parts/{Guid.NewGuid()}", Ct);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static async Task AssertProblemAsync(HttpResponseMessage response, HttpStatusCode status, string code)
     {
         Assert.Equal(status, response.StatusCode);
