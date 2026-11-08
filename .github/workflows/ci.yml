@@ -92,7 +92,7 @@ jobs:
           pnpm --filter @raceshop/storybook test:a11y
 
   e2e:
-    name: End-to-end smoke (API + SQL Server + web, axe)
+    name: End-to-end smoke (API + SQL Server + web + desktop, axe)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -134,12 +134,22 @@ jobs:
 
       - run: pnpm --filter @raceshop/web e2e
 
-      - name: Upload Playwright report
+      # The Electron app: same screens, API calls proxied by the main process, offline mode.
+      # Electron 45 downloads its binary explicitly (checksum-verified), not in an install script.
+      - name: Desktop app (Electron) smoke test
+        run: |
+          pnpm --filter @raceshop/desktop exec install-electron
+          pnpm --filter @raceshop/desktop build:dev
+          xvfb-run --auto-servernum pnpm --filter @raceshop/desktop e2e
+
+      - name: Upload Playwright reports
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-report
-          path: apps/web/playwright-report
+          name: playwright-reports
+          path: |
+            apps/web/playwright-report
+            apps/desktop/playwright-report
           retention-days: 7
 
   commits:
