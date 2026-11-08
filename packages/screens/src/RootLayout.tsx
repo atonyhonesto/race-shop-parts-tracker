@@ -5,6 +5,7 @@ import { AppShell, Button, ThemeToggle } from '@raceshop/ui';
 
 import { hasAnyRole, useAuth } from './auth/auth';
 import styles from './app.module.css';
+import { OfflineBanner } from './offline/offline';
 import { NoAccessPage } from './pages/StatusPages';
 
 export function RootLayout() {
@@ -33,6 +34,7 @@ export function RootLayout() {
         </>
       }
     >
+      <OfflineBanner />
       {hasAnyRole(user) ? <Outlet /> : <NoAccessPage />}
     </AppShell>
   );

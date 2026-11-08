@@ -3,13 +3,14 @@ import type { SubmitEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import type { PartSummary } from '@raceshop/api-client';
-import { Button, DataTable, Pagination, Spinner, TextField } from '@raceshop/ui';
+import { Button, DataTable, Pagination, TextField } from '@raceshop/ui';
 import type { Column } from '@raceshop/ui';
 
 import { PAGE_SIZE, usePartsSearch } from '../api/inventory';
 import styles from '../app.module.css';
 import { formatCost, formatNumber, formatUsage } from '../format';
 import { usePageTitle } from '../usePageTitle';
+import { PendingState } from '../offline/offline';
 import { QueryError } from './StatusPages';
 
 const columns: readonly Column<PartSummary>[] = [
@@ -80,7 +81,7 @@ export function PartsPage() {
         </form>
       </search>
 
-      {parts.isPending && <Spinner label="Loading parts" />}
+      {parts.isPending && <PendingState query={parts} label="parts" />}
       {parts.isError && <QueryError error={parts.error} what="parts" />}
       {parts.data && (
         <>

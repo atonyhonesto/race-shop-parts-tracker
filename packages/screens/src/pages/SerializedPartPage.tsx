@@ -3,16 +3,7 @@ import type { SubmitEvent } from 'react';
 import { Link, useParams } from 'react-router';
 
 import type { InstallPartResult, SerializedPartDetails } from '@raceshop/api-client';
-import {
-  Alert,
-  Button,
-  Dialog,
-  LifeGauge,
-  Select,
-  Spinner,
-  StatusBadge,
-  TextField,
-} from '@raceshop/ui';
+import { Alert, Button, Dialog, LifeGauge, Select, StatusBadge, TextField } from '@raceshop/ui';
 
 import {
   useCars,
@@ -32,6 +23,7 @@ import {
   unitName,
 } from '../format';
 import { usePageTitle } from '../usePageTitle';
+import { PendingState, useOnlineStatus } from '../offline/offline';
 import { QueryError } from './StatusPages';
 
 type Outcome = { tone: 'ok' | 'warning' | 'danger'; title: string; detail?: string } | null;
@@ -43,7 +35,7 @@ export function SerializedPartPage() {
   const [outcome, setOutcome] = useState<Outcome>(null);
   usePageTitle(part.data ? part.data.serialNumber : 'Serialized part');
 
-  if (part.isPending) return <Spinner label="Loading part" />;
+  if (part.isPending) return <PendingState query={part} label="part" />;
   if (part.isError) return <QueryError error={part.error} what="this part" />;
 
   const { data } = part;
@@ -120,6 +112,8 @@ function PartActions({
   onOutcome: (outcome: Outcome) => void;
 }) {
   const [open, setOpen] = useState<'install' | 'remove' | 'retire' | null>(null);
+  // Changes need current server data (one car at a time, life limit), so they are online-only (ADR 0008).
+  const online = useOnlineStatus();
   const close = () => {
     setOpen(null);
   };
@@ -134,7 +128,7 @@ function PartActions({
             onClick={() => {
               setOpen('install');
             }}
-            disabled={part.lifeStatus === 'Expired'}
+            disabled={!online || part.lifeStatus === 'Expired'}
           >
             Install on a car
           </Button>
@@ -145,6 +139,7 @@ function PartActions({
             onClick={() => {
               setOpen('remove');
             }}
+            disabled={!online}
           >
             Remove from car
           </Button>
@@ -155,11 +150,15 @@ function PartActions({
             onClick={() => {
               setOpen('retire');
             }}
+            disabled={!online}
           >
             Retire part
           </Button>
         )}
       </div>
+      {!online && (
+        <p className={styles.muted}>You're offline. Changes are turned off until you reconnect.</p>
+      )}
       {part.status === 'InStock' && part.lifeStatus === 'Expired' && (
         <p className={styles.muted}>This part has reached its life limit and can't be installed.</p>
       )}

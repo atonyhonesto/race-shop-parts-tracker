@@ -10,9 +10,8 @@ import type { ReactNode } from 'react';
 
 import { Alert, Button, Spinner } from '@raceshop/ui';
 
-import { AuthContext, toAppRoles } from './auth';
-import type { AppRole, Auth } from './auth';
-import { SignInLayout } from './SignInLayout';
+import { AuthContext, SignInLayout, toAppRoles } from '@raceshop/screens';
+import type { AppRole, Auth } from '@raceshop/screens';
 
 /*
  * Microsoft Entra ID sign-in with MSAL (authorization code flow with PKCE, redirect-based).
