@@ -4,11 +4,11 @@ One-time setup of the Microsoft Entra ID app registrations used for sign-in. Loc
 the integration tests don't need any of this. They use the header-based Dev scheme (see
 [CONTRIBUTING.md](../../CONTRIBUTING.md#run-the-api-locally)).
 
-| Registration                    | Type          | Purpose                                                                 |
-| ------------------------------- | ------------- | ----------------------------------------------------------------------- |
-| Race Shop Parts Tracker API     | Web API       | Validates tokens. Defines the app roles and the `access_as_user` scope. |
-| Race Shop Parts Tracker Web     | SPA           | The React app signs users in with MSAL and requests tokens for the API. |
-| Race Shop Parts Tracker Desktop | Public client | Added with the Electron app (phase 4); uses the system browser.         |
+| Registration                    | Type          | Purpose                                                                   |
+| ------------------------------- | ------------- | ------------------------------------------------------------------------- |
+| Race Shop Parts Tracker API     | Web API       | Validates tokens. Defines the app roles and the `access_as_user` scope.   |
+| Race Shop Parts Tracker Web     | SPA           | The React app signs users in with MSAL and requests tokens for the API.   |
+| Race Shop Parts Tracker Desktop | Public client | The Electron app signs in through the system browser (loopback redirect). |
 
 **Cost:** app registrations and user role assignments are included in Entra ID Free. They are
 directory objects, not billed Azure resources. Assigning _groups_ to app roles needs Entra ID P1,
@@ -124,19 +124,71 @@ EOF
 az ad sp create --id "$SPA_APP_ID"
 ```
 
-### 3. Pre-authorize the SPA on the API
+### 2b. Desktop app registration (public client)
+
+The Electron app signs in through the system browser and returns to a loopback address
+(`http://localhost` on a random port, with PKCE). Entra ID accepts any port for a `localhost`
+redirect on a public client. There is no client secret.
+
+```bash
+DESKTOP_APP_ID=$(az ad app create \
+  --display-name "Race Shop Parts Tracker Desktop" \
+  --sign-in-audience AzureADMyOrg \
+  --query appId -o tsv)
+DESKTOP_OBJECT_ID=$(az ad app show --id "$DESKTOP_APP_ID" --query id -o tsv)
+
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/applications/$DESKTOP_OBJECT_ID" \
+  --headers "Content-Type=application/json" \
+  --body "$(cat <<EOF
+{
+  "isFallbackPublicClient": true,
+  "publicClient": { "redirectUris": ["http://localhost"] },
+  "requiredResourceAccess": [{
+    "resourceAppId": "$API_APP_ID",
+    "resourceAccess": [{ "id": "$SCOPE_ID", "type": "Scope" }]
+  }]
+}
+EOF
+)"
+az ad sp create --id "$DESKTOP_APP_ID"
+```
+
+### 3. Pre-authorize the web and desktop apps on the API
 
 This lets users sign in without a consent prompt, and without an admin granting consent for the
 whole tenant.
+
+A PATCH to `api` replaces the **whole** `api` object, so this repeats the scope from step 1.
+Sending only `preAuthorizedApplications` would try to delete the scope, and Graph rejects that.
 
 ```bash
 az rest --method PATCH \
   --uri "https://graph.microsoft.com/v1.0/applications/$API_OBJECT_ID" \
   --headers "Content-Type=application/json" \
-  --body "{\"api\":{\"preAuthorizedApplications\":[{\"appId\":\"$SPA_APP_ID\",\"delegatedPermissionIds\":[\"$SCOPE_ID\"]}]}}"
+  --body "$(cat <<EOF
+{
+  "api": {
+    "requestedAccessTokenVersion": 2,
+    "oauth2PermissionScopes": [{
+      "id": "$SCOPE_ID",
+      "value": "access_as_user",
+      "type": "User",
+      "isEnabled": true,
+      "adminConsentDisplayName": "Use Race Shop Parts Tracker",
+      "adminConsentDescription": "Lets the app call the Race Shop Parts Tracker API as the signed-in user.",
+      "userConsentDisplayName": "Use Race Shop Parts Tracker",
+      "userConsentDescription": "Lets the app call the Race Shop Parts Tracker API as you."
+    }],
+    "preAuthorizedApplications": [
+      { "appId": "$SPA_APP_ID", "delegatedPermissionIds": ["$SCOPE_ID"] },
+      { "appId": "$DESKTOP_APP_ID", "delegatedPermissionIds": ["$SCOPE_ID"] }
+    ]
+  }
+}
+EOF
+)"
 ```
-
-> A PATCH to `api` replaces the whole `api` object. If you re-run step 1 after this step, run step 3 again.
 
 ### 4. Assign roles to people
 
@@ -162,6 +214,7 @@ assign_role casey@yourtenant.onmicrosoft.com "$CREW_CHIEF_ROLE"
 echo "Tenant ID:   $TENANT_ID"
 echo "API app ID:  $API_APP_ID   (AzureAd:ClientId for the API)"
 echo "SPA app ID:  $SPA_APP_ID   (VITE_ENTRA_CLIENT_ID in apps/web)"
+echo "Desktop ID:  $DESKTOP_APP_ID   (ENTRA_DESKTOP_CLIENT_ID repository variable)"
 echo "API scope:   api://$API_APP_ID/access_as_user"
 ```
 
@@ -169,8 +222,13 @@ For the web app, put them in `apps/web/.env.local`: `VITE_AUTH_MODE=entra`,
 `VITE_ENTRA_TENANT_ID`, `VITE_ENTRA_CLIENT_ID` (the SPA app ID), and
 `VITE_API_SCOPE=api://<api-app-id>/access_as_user`.
 
+For the desktop installer, set them as repository **variables** (Settings → Secrets and variables
+→ Actions → Variables): `ENTRA_TENANT_ID`, `ENTRA_DESKTOP_CLIENT_ID`,
+`API_SCOPE=api://<api-app-id>/access_as_user` and `DESKTOP_API_BASE_URL` (the API's HTTPS URL, from
+phase 5). The release workflow bakes them into the app.
+
 None of these values are secrets. The API validates tokens with Entra ID's public signing keys,
-so there is no client secret or certificate to store.
+and both apps are public clients, so there is no client secret or certificate to store.
 
 ## Option B: Azure portal
 
@@ -184,9 +242,12 @@ so there is no client secret or certificate to store.
 5. **New registration**: "Race Shop Parts Tracker Web". Under **Authentication**, add the
    **Single-page application** platform with redirect URI `http://localhost:5173`. Under
    **API permissions**, add the API's `access_as_user` delegated permission.
-6. Back on the API, under **Expose an API → Add a client application**, add the SPA's client ID and
-   select `access_as_user`.
-7. **Enterprise applications → Race Shop Parts Tracker API → Properties**: set "Assignment required?"
+6. **New registration**: "Race Shop Parts Tracker Desktop". Under **Authentication**, add the
+   **Mobile and desktop applications** platform with redirect URI `http://localhost`, and set
+   "Allow public client flows" to **Yes**. Under **API permissions**, add `access_as_user`.
+7. Back on the API, under **Expose an API → Add a client application**, add the SPA's and the
+   desktop app's client IDs, each with `access_as_user`.
+8. **Enterprise applications → Race Shop Parts Tracker API → Properties**: set "Assignment required?"
    to **Yes**. Then **Users and groups → Add user/group**: assign each person a role.
 
 ## Point the API at the tenant
