@@ -1,0 +1,45 @@
+name: Bug report
+description: Something is broken or behaves differently than documented.
+labels: [bug, triage]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the parts list
+        2. Search for "brake"
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where?
+      multiple: true
+      options:
+        - API
+        - Web app
+        - Desktop app (Electron)
+        - Storybook
+        - CI / deployment
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.3.0 or abc1234
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, trace ID or screenshots
+      description: Remove secrets and personal data first. A trace ID from the error message helps most.
+      render: text

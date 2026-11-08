@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Use cases and ports (interfaces). Depends on Domain only (ADR 0001). -->
+  <ItemGroup>
+    <ProjectReference Include="..\RaceShop.Domain\RaceShop.Domain.csproj" />
+  </ItemGroup>
+</Project>

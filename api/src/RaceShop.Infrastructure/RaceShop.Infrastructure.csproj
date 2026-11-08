@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Adapters: EF Core, SQL Server, telemetry. Implements Application ports (ADR 0001). -->
+  <ItemGroup>
+    <ProjectReference Include="..\RaceShop.Application\RaceShop.Application.csproj" />
+  </ItemGroup>
+</Project>

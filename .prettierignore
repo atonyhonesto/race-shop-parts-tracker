@@ -1,0 +1,5 @@
+# Prettier also skips everything in .gitignore.
+# Generated files, which are formatted by the tools that write them:
+pnpm-lock.yaml
+**/packages.lock.json
+CHANGELOG.md

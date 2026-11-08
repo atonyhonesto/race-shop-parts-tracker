@@ -1,0 +1,13 @@
+# Code owners are requested for review automatically.
+# The last matching pattern wins, so put specific paths below the default.
+
+*                       @atonyhonesto
+
+# Changes to quality gates, CI, infrastructure and architecture decisions need an owner's review
+# even after more maintainers join.
+/.github/               @atonyhonesto
+/infra/                 @atonyhonesto
+/docs/adr/              @atonyhonesto
+/api/Directory.*.props  @atonyhonesto
+/eslint.config.js       @atonyhonesto
+/.editorconfig          @atonyhonesto

@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  - apps/*
+
+# Fail installs on the wrong Node version instead of warning.
+engineStrict: true
+
+# Supply chain: do not install a package version until it has been public for 3 days
+# (most malicious releases are caught and pulled within hours).
+minimumReleaseAge: 4320

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "raceshop.application": {
+        "type": "Project",
+        "dependencies": {
+          "RaceShop.Domain": "[1.0.0, )"
+        }
+      },
+      "raceshop.domain": {
+        "type": "Project"
+      },
+      "raceshop.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "RaceShop.Application": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}
