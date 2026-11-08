@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // The generator's runtime code is not written for exactOptionalPropertyTypes (13 errors, all of
+    // that one kind). We compile it here with the option off and ship .d.ts files, so consuming apps
+    // keep the full strict settings.
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["src", "openapi-ts.config.ts"]
+}
