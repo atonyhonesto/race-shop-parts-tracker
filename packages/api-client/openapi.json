@@ -1,0 +1,785 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Race Shop Parts Tracker API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/parts": {
+      "get": {
+        "tags": [
+          "Parts"
+        ],
+        "operationId": "SearchParts",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 100000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfPartSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/parts/{id}": {
+      "get": {
+        "tags": [
+          "Parts"
+        ],
+        "operationId": "GetPart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/cars": {
+      "get": {
+        "tags": [
+          "Cars"
+        ],
+        "operationId": "ListCars",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/serialized-parts/{id}": {
+      "get": {
+        "tags": [
+          "Serialized parts"
+        ],
+        "operationId": "GetSerializedPart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SerializedPartDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/serialized-parts/{id}/install": {
+      "post": {
+        "tags": [
+          "Serialized parts"
+        ],
+        "operationId": "InstallPart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallPartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallPartResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/serialized-parts/{id}/remove": {
+      "post": {
+        "tags": [
+          "Serialized parts"
+        ],
+        "operationId": "RemovePart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemovePartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/serialized-parts/{id}/retire": {
+      "post": {
+        "tags": [
+          "Serialized parts"
+        ],
+        "operationId": "RetirePart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CarSummary": {
+        "required": [
+          "id",
+          "carNumber",
+          "team",
+          "chassisId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carNumber": {
+            "type": "string"
+          },
+          "team": {
+            "type": "string"
+          },
+          "chassisId": {
+            "type": "string"
+          }
+        }
+      },
+      "CurrentInstall": {
+        "required": [
+          "installRecordId",
+          "carId",
+          "carNumber",
+          "installedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "installRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carNumber": {
+            "type": "string"
+          },
+          "installedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "InstallPartRequest": {
+        "required": [
+          "carId"
+        ],
+        "type": "object",
+        "properties": {
+          "carId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "InstallPartResult": {
+        "required": [
+          "installRecordId",
+          "lifeStatus",
+          "lifeUsedPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "installRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lifeStatus": {
+            "$ref": "#/components/schemas/LifeStatus"
+          },
+          "lifeUsedPercent": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "LifeStatus": {
+        "enum": [
+          "Ok",
+          "Warning",
+          "Expired"
+        ],
+        "description": "Where a serialized part is relative to its life limit."
+      },
+      "LifeUnit": {
+        "enum": [
+          "Miles",
+          "Hours"
+        ],
+        "description": "How a part\u0027s life is measured."
+      },
+      "PagedResultOfPartSummary": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartSummary"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PartDetails": {
+        "required": [
+          "id",
+          "partNumber",
+          "description",
+          "category",
+          "manufacturer",
+          "lifeLimit",
+          "lifeUnit",
+          "cost",
+          "serializedParts"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partNumber": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "lifeLimit": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeUnit": {
+            "$ref": "#/components/schemas/LifeUnit"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "serializedParts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SerializedPartSummary"
+            }
+          }
+        },
+        "description": "A catalog part with each of its serialized parts and their life status."
+      },
+      "PartStatus": {
+        "enum": [
+          "InStock",
+          "Installed",
+          "Retired"
+        ]
+      },
+      "PartSummary": {
+        "required": [
+          "id",
+          "partNumber",
+          "description",
+          "category",
+          "manufacturer",
+          "lifeLimit",
+          "lifeUnit",
+          "cost",
+          "inStockCount",
+          "installedCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partNumber": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "lifeLimit": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeUnit": {
+            "$ref": "#/components/schemas/LifeUnit"
+          },
+          "cost": {
+            "type": "number",
+            "format": "double"
+          },
+          "inStockCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "installedCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RemovePartRequest": {
+        "required": [
+          "usageSinceInstall"
+        ],
+        "type": "object",
+        "properties": {
+          "usageSinceInstall": {
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SerializedPartDetails": {
+        "required": [
+          "id",
+          "serialNumber",
+          "partId",
+          "partNumber",
+          "description",
+          "status",
+          "accumulatedUsage",
+          "lifeLimit",
+          "lifeUnit",
+          "lifeUsedPercent",
+          "lifeStatus",
+          "currentInstall"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "partId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partNumber": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PartStatus"
+          },
+          "accumulatedUsage": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeLimit": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeUnit": {
+            "$ref": "#/components/schemas/LifeUnit"
+          },
+          "lifeUsedPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeStatus": {
+            "$ref": "#/components/schemas/LifeStatus"
+          },
+          "currentInstall": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CurrentInstall"
+              }
+            ]
+          }
+        }
+      },
+      "SerializedPartSummary": {
+        "required": [
+          "id",
+          "serialNumber",
+          "status",
+          "accumulatedUsage",
+          "lifeUsedPercent",
+          "lifeStatus",
+          "installedOnCarNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PartStatus"
+          },
+          "accumulatedUsage": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeUsedPercent": {
+            "type": "number",
+            "format": "double"
+          },
+          "lifeStatus": {
+            "$ref": "#/components/schemas/LifeStatus"
+          },
+          "installedOnCarNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Parts"
+    },
+    {
+      "name": "Cars"
+    },
+    {
+      "name": "Serialized parts"
+    }
+  ]
+}

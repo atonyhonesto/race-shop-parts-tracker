@@ -13,8 +13,18 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ProblemDetailsExceptionHandler>();
 builder.Services.AddValidation();
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-builder.Services.AddOpenApi();
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    // Numbers are numbers: reject "12" for 12, so the contract (and the generated client) says `number`.
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+});
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document, _, _) =>
+{
+    document.Info.Title = "Race Shop Parts Tracker API";
+    // Clients choose the base URL (dev proxy, deployed host); the contract itself is host-independent.
+    document.Servers = [];
+    return Task.CompletedTask;
+}));
 builder.Services.AddHealthChecks();
 
 // Security: Entra ID tokens in production, header-based dev scheme locally (see Auth/).
