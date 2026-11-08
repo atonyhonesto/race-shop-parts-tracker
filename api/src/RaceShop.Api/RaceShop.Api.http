@@ -1,0 +1,57 @@
+# Requests for a local run (`dotnet run --project api/src/RaceShop.Api`).
+# Works with the VS Code REST Client extension, Visual Studio, and Rider.
+# Local runs use the Dev auth scheme: X-Dev-User signs you in, X-Dev-Roles sets app roles.
+
+@host = http://localhost:5080
+@manager = PartsManager
+@crewChief = CrewChief
+
+### Health (anonymous)
+GET {{host}}/health
+
+### OpenAPI document (anonymous)
+GET {{host}}/openapi/v1.json
+
+### No user: 401
+GET {{host}}/api/parts
+
+### Search parts as a crew chief
+GET {{host}}/api/parts?search=brake&page=1&pageSize=25
+X-Dev-User: casey
+X-Dev-Roles: {{crewChief}}
+
+### Cars
+GET {{host}}/api/cars
+X-Dev-User: casey
+X-Dev-Roles: {{crewChief}}
+
+### Serialized part details (paste an id from the database)
+@partId = 00000000-0000-0000-0000-000000000000
+GET {{host}}/api/serialized-parts/{{partId}}
+X-Dev-User: casey
+X-Dev-Roles: {{crewChief}}
+
+### Install as a crew chief: 403
+POST {{host}}/api/serialized-parts/{{partId}}/install
+X-Dev-User: casey
+X-Dev-Roles: {{crewChief}}
+Content-Type: application/json
+
+{ "carId": "00000000-0000-0000-0000-000000000000" }
+
+### Install as a parts manager
+@carId = 00000000-0000-0000-0000-000000000000
+POST {{host}}/api/serialized-parts/{{partId}}/install
+X-Dev-User: alex
+X-Dev-Roles: {{manager}}
+Content-Type: application/json
+
+{ "carId": "{{carId}}" }
+
+### Remove after 312.5 miles
+POST {{host}}/api/serialized-parts/{{partId}}/remove
+X-Dev-User: alex
+X-Dev-Roles: {{manager}}
+Content-Type: application/json
+
+{ "usageSinceInstall": 312.5 }
