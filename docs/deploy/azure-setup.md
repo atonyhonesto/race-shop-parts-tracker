@@ -123,6 +123,38 @@ az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications/$SPA
 gh variable set DESKTOP_API_BASE_URL --repo "$GITHUB_REPO" --body "<api-url from the run summary>"
 ```
 
+## SQL region
+
+Azure sometimes stops accepting new SQL servers in a region for a given subscription. The deploy
+then fails with `RegionDoesNotAllowProvisioning`. Check which regions accept them:
+
+```bash
+for loc in eastus2 centralus southcentralus westus3; do
+  echo "$loc: $(az rest --uri "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Sql/locations/$loc/capabilities?api-version=2023-08-01-preview" --query status -o tsv)"
+done   # "Available" accepts new servers; "Visible" is restricted
+```
+
+Then either request access (Help + support → Service and subscription limits (quotas) → SQL
+Database, region access), or put only the database in an available region:
+
+```bash
+gh variable set SQL_LOCATION --env production --repo "$GITHUB_REPO" --body centralus
+```
+
+and re-run **Deploy**. The API stays in its region. Traffic between regions is billed at about
+$0.02/GB; for a demo that rounds to $0, and the budget alert would email you at the first cent.
+
+**Moving back** once the original region is approved: the region is part of the server name, so a
+new server is created rather than the old one being moved.
+
+1. `gh variable delete SQL_LOCATION --env production --repo "$GITHUB_REPO"` and re-run **Deploy**.
+   It creates the server in the API's region, applies the migrations, grants the API access and
+   repoints the connection string.
+2. Copy any data you want to keep. For a demo, the seed data is enough; otherwise export and import
+   a `.bacpac` with SqlPackage.
+3. Delete the old server:
+   `az sql server delete --resource-group "$RESOURCE_GROUP" --name <name ending in -sql-centralus>`.
+
 ## Removing everything
 
 ```bash

@@ -7,3 +7,6 @@ param sqlAdminGroupObjectId = readEnvironmentVariable('SQL_ADMIN_GROUP_OBJECT_ID
 param entraApiClientId = readEnvironmentVariable('ENTRA_API_CLIENT_ID')
 param budgetEmail = readEnvironmentVariable('BUDGET_EMAIL')
 param budgetStartDate = readEnvironmentVariable('BUDGET_START_DATE')
+
+// Optional: a different region for Azure SQL (empty = same as the API). See docs/deploy/azure-setup.md.
+param sqlLocation = readEnvironmentVariable('SQL_LOCATION', '')
