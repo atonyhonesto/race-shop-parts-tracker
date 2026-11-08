@@ -56,11 +56,16 @@ async function unwrap<R extends SdkResult<unknown>>(
   return result.data as Exclude<R['data'], undefined>;
 }
 
-export function createQueryClient(): QueryClient {
+/**
+ * @param gcTime How long unused data stays in memory. The desktop app raises it to match how long
+ *   its offline cache is kept, because persisted queries are restored only while still in the cache.
+ */
+export function createQueryClient({ gcTime }: { gcTime?: number } = {}): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
+        ...(gcTime === undefined ? {} : { gcTime }),
         // Retry network blips and 5xx (e.g. Azure SQL resuming from auto-pause), never 4xx.
         retry: (failureCount, error) =>
           !(error instanceof ApiError && error.status < 500) && failureCount < 3,

@@ -43,7 +43,12 @@ export function fakeApi(responses: FakeRoute[]) {
   return { requests };
 }
 
-export function renderApp(path: string, roles: AppRole[] = ['PartsManager']) {
+export function renderApp(
+  path: string,
+  roles: AppRole[] = ['PartsManager'],
+  /** Seed the cache, e.g. to simulate data saved on the device before going offline. */
+  prefill?: (queryClient: QueryClient) => void,
+) {
   const auth: Auth = {
     mode: 'dev',
     user: { name: 'tester', roles },
@@ -52,6 +57,7 @@ export function renderApp(path: string, roles: AppRole[] = ['PartsManager']) {
       Promise.resolve({ 'X-Dev-User': 'tester', 'X-Dev-Roles': roles.join(',') }),
   };
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  prefill?.(queryClient);
   const router = createMemoryRouter(routes, { initialEntries: [path] });
 
   return render(

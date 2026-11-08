@@ -1,0 +1,43 @@
+{
+  "name": "@raceshop/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Race Shop Parts Tracker for Windows: the shared screens in Electron, with an offline parts list.",
+  "author": "Race Shop Parts Tracker contributors",
+  "type": "module",
+  "main": "dist/main/main.mjs",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@azure/msal-node": "^7.2.0",
+    "@playwright/test": "^1.64.1",
+    "@raceshop/api-client": "workspace:*",
+    "@raceshop/screens": "workspace:*",
+    "@raceshop/ui": "workspace:*",
+    "@raceshop/ui-wc": "workspace:*",
+    "@tanstack/react-query": "^5.106.1",
+    "@tanstack/react-query-persist-client": "^5.106.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  },
+  "scripts": {
+    "install-electron": "install-electron",
+    "build": "tsc --noEmit && vite build -c vite.main.config.ts && vite build -c vite.preload.config.ts && vite build",
+    "build:dev": "vite build -c vite.main.config.ts --mode dev && vite build -c vite.preload.config.ts --mode dev && vite build --mode dev",
+    "start": "node scripts/start.mjs",
+    "dev": "pnpm build:dev && pnpm start",
+    "package": "electron-builder --win --publish never",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  }
+}

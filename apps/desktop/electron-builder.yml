@@ -1,0 +1,33 @@
+# Windows installer (NSIS). .github/workflows/release.yml builds it and publishes it to GitHub Releases.
+appId: com.raceshop.partstracker
+productName: Race Shop Parts Tracker
+copyright: Race Shop Parts Tracker contributors
+directories:
+  output: release
+# Everything is bundled by Vite into dist/; the app ships no node_modules and no native modules.
+files:
+  - dist/**/*
+  - '!dist/**/*.map'
+  - package.json
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: RaceShopPartsTracker-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
+# Electron fuses: turn off ways to run the packaged app as something else (ADR 0009).
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false

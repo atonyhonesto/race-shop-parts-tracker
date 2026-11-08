@@ -8,6 +8,5 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test/setup.ts'],
     css: { modules: { classNameStrategy: 'non-scoped' } },
-    env: { VITE_AUTH_MODE: 'dev' },
   },
 });

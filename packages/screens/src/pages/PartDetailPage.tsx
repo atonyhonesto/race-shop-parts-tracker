@@ -1,13 +1,14 @@
 import { Link, useParams } from 'react-router';
 
 import type { LifeUnit, SerializedPartSummary } from '@raceshop/api-client';
-import { DataTable, LifeGauge, Spinner, StatusBadge } from '@raceshop/ui';
+import { DataTable, LifeGauge, StatusBadge } from '@raceshop/ui';
 import type { Column } from '@raceshop/ui';
 
 import { usePart } from '../api/inventory';
 import styles from '../app.module.css';
 import { formatCost, formatUsage, partStatus, unitName } from '../format';
 import { usePageTitle } from '../usePageTitle';
+import { PendingState } from '../offline/offline';
 import { QueryError } from './StatusPages';
 
 function serialColumns(limit: number, unit: LifeUnit): readonly Column<SerializedPartSummary>[] {
@@ -53,7 +54,7 @@ export function PartDetailPage() {
   const part = usePart(partId);
   usePageTitle(part.data ? part.data.partNumber : 'Part');
 
-  if (part.isPending) return <Spinner label="Loading part" />;
+  if (part.isPending) return <PendingState query={part} label="part" />;
   if (part.isError) return <QueryError error={part.error} what="this part" />;
 
   const { data } = part;

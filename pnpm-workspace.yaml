@@ -13,3 +13,5 @@ minimumReleaseAge: 4320
 allowBuilds:
   # Its postinstall only re-checks the platform binary, which comes from @esbuild/<platform>.
   esbuild: false
+  # Squirrel.Windows tooling that electron-builder pulls in; we build NSIS installers, not Squirrel.
+  electron-winstaller: false

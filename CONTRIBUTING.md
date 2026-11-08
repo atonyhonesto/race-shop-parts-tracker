@@ -70,16 +70,32 @@ pnpm --filter @raceshop/web dev                 # http://localhost:5173, proxies
 Storybook: `pnpm --filter @raceshop/storybook dev` (http://localhost:6006). The life gauge in plain
 HTML, without a framework: `pnpm --filter @raceshop/ui-wc demo`.
 
+### Run the desktop app
+
+```sh
+pnpm --filter @raceshop/desktop install-electron   # once: downloads Electron (checksum-verified)
+pnpm --filter @raceshop/desktop dev                # dev build (Development sign-in) + start
+```
+
+The desktop app calls the API through its main process (`http://localhost:5080` in dev builds), so
+start the API first. To try the installer locally:
+`pnpm --filter @raceshop/desktop build && pnpm --filter @raceshop/desktop package`. A production
+build needs the Entra settings and an HTTPS API URL (see [Releases](#9-releases)).
+
 ### End-to-end tests
 
-The Playwright smoke test starts the API (Development mode, seeded data) and the built web app
-itself. It needs a SQL Server and a connection string:
+The Playwright smoke tests start the API (Development mode, seeded data) themselves. They need a SQL
+Server and a connection string:
 
 ```sh
 docker compose up -d sql
 export E2E_CONNECTION_STRING="Server=127.0.0.1,1433;Database=RaceShopE2E;User Id=sa;Password=<your password>;TrustServerCertificate=True"
+
 pnpm --filter @raceshop/web exec playwright install chromium   # once
-pnpm --filter @raceshop/web e2e
+pnpm --filter @raceshop/web e2e                                 # web app
+
+pnpm --filter @raceshop/desktop build:dev
+pnpm --filter @raceshop/desktop e2e                             # Electron app, incl. offline
 ```
 
 ## 2. Repository layout
@@ -88,8 +104,10 @@ pnpm --filter @raceshop/web e2e
 api/                 .NET 10 solution (layered, see docs/adr/0001)
   src/               Domain, Application, Infrastructure, Api
   tests/             xUnit unit tests; integration tests (in-memory API + SQL Server container)
-apps/web             React + Vite app (MSAL sign-in, TanStack Query, lazy routes, e2e/)
+apps/web             React + Vite app: MSAL sign-in, browser router, e2e/
+apps/desktop         Electron app: same screens, main-process sign-in and API proxy, offline cache
 apps/storybook       stories for every ui component, axe checks over every story
+packages/screens     the app's pages, data hooks (TanStack Query) and routes, shared by web and desktop
 packages/ui          shared React components and design tokens
 packages/ui-wc       framework-agnostic web components (Stencil): <life-gauge>
 packages/api-client  TypeScript client generated from openapi.json
@@ -184,3 +202,27 @@ change. An accepted ADR is never edited; a new ADR supersedes it.
 Every package is a long-term cost. In the PR description, say what it does, why the platform or an
 existing package can't do it, and what its maintenance and license status are. .NET versions go in
 [api/Directory.Packages.props](api/Directory.Packages.props) (central package management).
+
+## 9. Releases
+
+Releases ship the Windows installer for the desktop app. The web app and API deploy continuously
+from `main`.
+
+1. On an up-to-date `main` with a clean working tree, preview the release:
+   `pnpm release --dry-run`. The version comes from the commits since the last tag: `feat` bumps the
+   minor version, `fix` and `perf` bump the patch version, and a breaking change (`!` or
+   `BREAKING CHANGE:`) bumps the major version (the minor version before 1.0).
+2. `pnpm release` (or `pnpm release minor`, `pnpm release 1.0.0`) writes the `CHANGELOG.md` section,
+   sets the version, commits `chore(release): vX.Y.Z` and tags it.
+3. `git push origin main --follow-tags`. The tag runs
+   [release.yml](.github/workflows/release.yml), which builds the NSIS installer, attaches
+   SHA-256 checksums and a build-provenance attestation, and publishes a GitHub Release with the
+   changelog section as notes.
+
+The workflow reads the app's settings from repository **variables** (not secrets; none of them are
+confidential): `DESKTOP_API_BASE_URL`, `ENTRA_TENANT_ID`, `ENTRA_DESKTOP_CLIENT_ID` and `API_SCOPE`.
+See [docs/auth/entra-setup.md](docs/auth/entra-setup.md).
+
+> The installer is not code-signed (certificates cost money; this project stays on free tiers), so
+> Windows SmartScreen warns on first run. Verify a download with
+> `gh attestation verify <installer>.exe --repo <owner>/<repo>` or the published `SHA256SUMS.txt`.
