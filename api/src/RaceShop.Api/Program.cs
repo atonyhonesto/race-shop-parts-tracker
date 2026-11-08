@@ -3,6 +3,7 @@ using RaceShop.Api;
 using RaceShop.Api.Auth;
 using RaceShop.Api.Endpoints;
 using RaceShop.Api.Errors;
+using RaceShop.Api.Hosting;
 using RaceShop.Application.Installs;
 using RaceShop.Infrastructure;
 
@@ -25,9 +26,12 @@ builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document,
     document.Servers = [];
     return Task.CompletedTask;
 }));
-builder.Services.AddHealthChecks();
+// Operations: liveness and readiness (no DB on liveness), telemetry when configured (see Hosting/).
+builder.Services.AddRaceShopHealthChecks();
+builder.Services.AddRaceShopTelemetry(builder.Configuration);
 
-// Security: Entra ID tokens in production, header-based dev scheme locally (see Auth/).
+// Security: CORS for the web app's origin; Entra ID tokens in production, Dev scheme locally (see Auth/).
+builder.Services.AddRaceShopCors(builder.Configuration);
 builder.Services.AddRaceShopAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddRaceShopAuthorization();
 
@@ -42,11 +46,14 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+// Before authentication: preflight requests carry no token, and 401/403 responses need CORS
+// headers so the browser lets the web app read them.
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapOpenApi().AllowAnonymous();
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapRaceShopHealthChecks();
 app.MapInventoryEndpoints();
 
 if (app.Environment.IsDevelopment())
