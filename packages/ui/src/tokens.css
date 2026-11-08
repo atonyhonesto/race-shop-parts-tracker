@@ -1,0 +1,104 @@
+/*
+ * Design tokens: the only place colours, spacing and type are defined.
+ * Light is the default. Dark follows the OS setting unless the user picks a theme
+ * (data-theme on <html>, set by ThemeToggle).
+ *
+ * Contrast (WCAG 2.2 AA): text tokens are at least 4.5:1 on --rs-color-bg and --rs-color-surface;
+ * status and border colours used for meaning are at least 3:1.
+ * Custom properties inherit into shadow DOM, so the <life-gauge> web component uses them too.
+ */
+:root {
+  color-scheme: light;
+
+  --rs-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --rs-font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+  --rs-font-size-sm: 0.875rem;
+  --rs-font-size-md: 1rem;
+  --rs-font-size-lg: 1.25rem;
+  --rs-font-size-xl: 1.75rem;
+
+  --rs-space-1: 0.25rem;
+  --rs-space-2: 0.5rem;
+  --rs-space-3: 0.75rem;
+  --rs-space-4: 1rem;
+  --rs-space-6: 1.5rem;
+  --rs-space-8: 2rem;
+
+  --rs-radius: 6px;
+  --rs-content-width: 72rem;
+  /* Minimum touch target (WCAG 2.5.8 asks for 24px; we use 44px for gloved hands in the garage). */
+  --rs-target-size: 2.75rem;
+
+  --rs-color-bg: #ffffff;
+  --rs-color-surface: #f6f8fa;
+  --rs-color-border: #818b98;
+  --rs-color-border-subtle: #d1d9e0;
+  --rs-color-text: #1f2328;
+  --rs-color-text-muted: #59636e;
+  --rs-color-accent: #0969da;
+  --rs-color-accent-hover: #0757b8;
+  --rs-color-on-accent: #ffffff;
+  --rs-color-focus: #0969da;
+
+  --rs-color-ok: #1a7f37;
+  --rs-color-warning: #9a6700;
+  --rs-color-danger: #cf222e;
+  --rs-color-danger-hover: #a40e26;
+  --rs-color-ok-bg: #dafbe1;
+  --rs-color-warning-bg: #fff8c5;
+  --rs-color-danger-bg: #ffebe9;
+  --rs-color-info-bg: #ddf4ff;
+  --rs-color-gauge-track: #d1d9e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --rs-color-bg: #0d1117;
+    --rs-color-surface: #151b23;
+    --rs-color-border: #656c76;
+    --rs-color-border-subtle: #3d444d;
+    --rs-color-text: #f0f6fc;
+    --rs-color-text-muted: #9198a1;
+    --rs-color-accent: #4493f8;
+    --rs-color-accent-hover: #6cabfa;
+    --rs-color-on-accent: #0d1117;
+    --rs-color-focus: #4493f8;
+
+    --rs-color-ok: #3fb950;
+    --rs-color-warning: #d29922;
+    --rs-color-danger: #f85149;
+    --rs-color-danger-hover: #ff7b72;
+    --rs-color-ok-bg: #12261e;
+    --rs-color-warning-bg: #272115;
+    --rs-color-danger-bg: #25171c;
+    --rs-color-info-bg: #121d2f;
+    --rs-color-gauge-track: #3d444d;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --rs-color-bg: #0d1117;
+  --rs-color-surface: #151b23;
+  --rs-color-border: #656c76;
+  --rs-color-border-subtle: #3d444d;
+  --rs-color-text: #f0f6fc;
+  --rs-color-text-muted: #9198a1;
+  --rs-color-accent: #4493f8;
+  --rs-color-accent-hover: #6cabfa;
+  --rs-color-on-accent: #0d1117;
+  --rs-color-focus: #4493f8;
+
+  --rs-color-ok: #3fb950;
+  --rs-color-warning: #d29922;
+  --rs-color-danger: #f85149;
+  --rs-color-danger-hover: #ff7b72;
+  --rs-color-ok-bg: #12261e;
+  --rs-color-warning-bg: #272115;
+  --rs-color-danger-bg: #25171c;
+  --rs-color-info-bg: #121d2f;
+  --rs-color-gauge-track: #3d444d;
+}

@@ -1,0 +1,56 @@
+/* Import once at the app root: tokens plus a small base layer. Components bring their own CSS modules. */
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--rs-color-bg);
+  color: var(--rs-color-text);
+  font-family: var(--rs-font-sans);
+  font-size: var(--rs-font-size-md);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin-block: 0 var(--rs-space-4);
+}
+
+h1 {
+  font-size: var(--rs-font-size-xl);
+}
+
+h2 {
+  font-size: var(--rs-font-size-lg);
+}
+
+a {
+  color: var(--rs-color-accent);
+}
+
+/* One visible focus style for every interactive element (WCAG 2.4.7, 2.4.11). */
+:focus-visible {
+  outline: 3px solid var(--rs-color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
