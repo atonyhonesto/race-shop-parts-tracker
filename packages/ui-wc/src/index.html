@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Life gauge: plain HTML demo</title>
+    <!-- The whole integration: one script tag. No framework, no bundler. -->
+    <script type="module" src="/build/ui-wc.esm.js"></script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --rs-color-bg: #ffffff;
+        --rs-color-text: #1f2328;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --rs-color-bg: #0d1117;
+          --rs-color-text: #e6edf3;
+          --rs-color-gauge-track: #3d444d;
+          --rs-color-ok: #3fb950;
+          --rs-color-warning: #d29922;
+          --rs-color-danger: #f85149;
+        }
+      }
+      body {
+        margin: 0;
+        padding: 1rem;
+        background: var(--rs-color-bg);
+        color: var(--rs-color-text);
+        font-family: system-ui, sans-serif;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: end;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>&lt;life-gauge&gt; in plain HTML</h1>
+      <p>The same element the React web app and the Electron app use.</p>
+
+      <div class="row">
+        <life-gauge percent="24" label="Life used, BR380-0001"></life-gauge>
+        <life-gauge percent="85" label="Life used, BR380-0002"></life-gauge>
+        <life-gauge percent="101" label="Life used, BR380-0003"></life-gauge>
+      </div>
+
+      <h2>Try it</h2>
+      <label for="percent">Life used (%)</label>
+      <input id="percent" type="range" min="0" max="120" value="60" />
+      <div class="row">
+        <life-gauge id="live" percent="60" size="large" label="Life used, demo part"></life-gauge>
+      </div>
+    </main>
+
+    <script type="module">
+      const input = document.getElementById('percent');
+      const gauge = document.getElementById('live');
+      input.addEventListener('input', () => {
+        gauge.percent = Number(input.value);
+      });
+    </script>
+  </body>
+</html>

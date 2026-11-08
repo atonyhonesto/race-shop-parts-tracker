@@ -1,0 +1,86 @@
+/*
+ * Colours come from the page's design tokens (packages/ui/src/tokens.css). Custom properties
+ * inherit into the shadow DOM, so light/dark themes work without extra code.
+ * The fallbacks keep the element usable on a page without the tokens (the plain HTML demo).
+ */
+:host {
+  display: inline-block;
+  color: var(--rs-color-text, #1f2328);
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+.gauge {
+  display: grid;
+  justify-items: center;
+  inline-size: 7rem;
+}
+
+:host([size='large']) .gauge {
+  inline-size: 12rem;
+  font-size: 1.5rem;
+}
+
+svg {
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+}
+
+.track,
+.fill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.track {
+  stroke: var(--rs-color-gauge-track, #d0d7de);
+}
+
+.fill {
+  transition: stroke-dasharray 300ms ease-out;
+}
+
+.tick {
+  stroke: var(--rs-color-text, #1f2328);
+  stroke-width: 2;
+}
+
+.value {
+  margin-block-start: -1.75em;
+  font-size: 1.25em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
+.ok .fill {
+  stroke: var(--rs-color-ok, #1a7f37);
+}
+
+.warning .fill {
+  stroke: var(--rs-color-warning, #9a6700);
+}
+
+.warning .status {
+  color: var(--rs-color-warning, #9a6700);
+}
+
+.expired .fill {
+  stroke: var(--rs-color-danger, #cf222e);
+}
+
+.expired .status {
+  color: var(--rs-color-danger, #cf222e);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
