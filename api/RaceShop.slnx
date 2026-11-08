@@ -14,5 +14,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/RaceShop.UnitTests/RaceShop.UnitTests.csproj" />
+    <Project Path="tests/RaceShop.IntegrationTests/RaceShop.IntegrationTests.csproj" />
   </Folder>
 </Solution>
