@@ -27,6 +27,8 @@ public interface IInventoryQueries
 {
     Task<PagedResult<PartSummary>> SearchPartsAsync(PartSearch search, CancellationToken cancellationToken);
 
+    Task<PartDetails?> GetPartAsync(Guid id, CancellationToken cancellationToken);
+
     Task<SerializedPartDetails?> GetSerializedPartAsync(Guid id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<CarSummary>> ListCarsAsync(CancellationToken cancellationToken);

@@ -57,6 +57,68 @@ internal sealed class EfInventoryQueries(RaceShopDbContext db) : IInventoryQueri
         return new PagedResult<PartSummary>(items, search.Page, search.PageSize, total);
     }
 
+    public async Task<PartDetails?> GetPartAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var part = await db.Parts
+            .AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => new
+            {
+                p.Id,
+                p.PartNumber,
+                p.Description,
+                p.Category,
+                p.Manufacturer,
+                LimitValue = p.LifeLimit.Value,
+                LimitUnit = p.LifeLimit.Unit,
+                p.Cost,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (part is null)
+        {
+            return null;
+        }
+
+        var serials = await db.SerializedParts
+            .AsNoTracking()
+            .Where(s => s.PartId == id)
+            .OrderBy(s => s.SerialNumber)
+            .Select(s => new
+            {
+                s.Id,
+                s.SerialNumber,
+                s.Status,
+                s.AccumulatedUsage,
+                CarNumber = s.Installs
+                    .Where(i => i.RemovedAt == null)
+                    .Select(i => db.Cars.Where(c => c.Id == i.CarId).Select(c => c.CarNumber).First())
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var limit = new LifeLimit(part.LimitValue, part.LimitUnit);
+        return new PartDetails(
+            part.Id,
+            part.PartNumber,
+            part.Description,
+            part.Category,
+            part.Manufacturer,
+            limit.Value,
+            limit.Unit,
+            part.Cost,
+            serials
+                .Select(s => new SerializedPartSummary(
+                    s.Id,
+                    s.SerialNumber,
+                    s.Status,
+                    s.AccumulatedUsage,
+                    LifePercent.Of(limit, s.AccumulatedUsage),
+                    limit.Evaluate(s.AccumulatedUsage),
+                    s.CarNumber))
+                .ToList());
+    }
+
     public async Task<SerializedPartDetails?> GetSerializedPartAsync(Guid id, CancellationToken cancellationToken)
     {
         var row = await db.SerializedParts
