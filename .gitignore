@@ -18,6 +18,11 @@ dist-electron/
 out/
 release/
 storybook-static/
+www/
+.stencil/
+playwright-report/
+test-results/
+blob-report/
 *.tsbuildinfo
 .eslintcache
 npm-debug.log*

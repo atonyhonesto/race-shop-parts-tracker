@@ -1,0 +1,19 @@
+{
+  "name": "@raceshop/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TypeScript client generated from the API's OpenAPI contract (openapi.json).",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "typescript": "~6.0.3"
+  }
+}
