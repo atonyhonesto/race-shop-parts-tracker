@@ -1,5 +1,6 @@
 import '@raceshop/ui/styles.css';
 
+import { client } from '@raceshop/api-client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -15,6 +16,8 @@ const { AuthProvider } =
     ? await import('./auth/dev')
     : await import('./auth/entra');
 
+// Deployed: the API is on another origin (App Service). Locally and in e2e: same origin via the Vite proxy.
+client.setConfig({ baseUrl: import.meta.env.VITE_API_BASE_URL ?? '' });
 syncOnlineStatusWithBrowser();
 const queryClient = createQueryClient();
 const router = createBrowserRouter(routes);

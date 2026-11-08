@@ -15,6 +15,7 @@ supersedes the old one, and the old one stays here so the history stays readable
 | [0007](0007-web-components-for-cross-framework-reuse.md) | Life gauge as a Web Component (Stencil)  | Accepted | 2026-11-07 |
 | [0008](0008-read-only-offline-cache.md)                  | Read-only, encrypted offline cache       | Accepted | 2026-11-08 |
 | [0009](0009-desktop-security-model.md)                   | Desktop: tokens stay in the main process | Accepted | 2026-11-08 |
+| [0010](0010-free-tier-azure-hosting.md)                  | Azure free tiers, hard-capped at $0      | Accepted | 2026-11-08 |
 
 ## Adding an ADR
 

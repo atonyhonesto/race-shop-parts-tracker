@@ -12,7 +12,7 @@ namespace RaceShop.IntegrationTests.Security;
 /// </summary>
 public sealed class EndpointPolicyTests
 {
-    private static readonly string[] AnonymousRoutes = ["/health", "/openapi/{documentName}.json"];
+    private static readonly string[] AnonymousRoutes = ["/health", "/health/ready", "/openapi/{documentName}.json"];
 
     [Fact]
     public async Task EveryApiEndpoint_RequiresReadInventory_AndWritesRequireManageInventory()

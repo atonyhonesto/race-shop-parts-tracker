@@ -1,0 +1,283 @@
+# Deploys main to Azure (free tiers, ADR 0010). One-time setup: docs/deploy/azure-setup.md.
+#
+#   infrastructure ─┬─► api        (migrations, database user, zip deploy, smoke test)
+#                   ├─► web        (Static Web App)
+#                   └─► storybook  (Static Web App)
+#
+# Signs in to Azure with OIDC (no stored credentials). Every value read from `vars` is an ID or a
+# URL, not a secret. Re-running an older successful run redeploys that version (docs/runbook.md).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never stop a deployment halfway
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+
+jobs:
+  infrastructure:
+    name: Infrastructure (Bicep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      api-name: ${{ steps.deploy.outputs.apiName }}
+      api-url: ${{ steps.deploy.outputs.apiUrl }}
+      api-identity-name: ${{ steps.deploy.outputs.apiIdentityName }}
+      api-identity-client-id: ${{ steps.deploy.outputs.apiIdentityClientId }}
+      sql-server-name: ${{ steps.deploy.outputs.sqlServerName }}
+      sql-server-fqdn: ${{ steps.deploy.outputs.sqlServerFqdn }}
+      database-name: ${{ steps.deploy.outputs.databaseName }}
+      web-name: ${{ steps.deploy.outputs.webName }}
+      web-url: ${{ steps.deploy.outputs.webUrl }}
+      storybook-name: ${{ steps.deploy.outputs.storybookName }}
+      storybook-url: ${{ steps.deploy.outputs.storybookUrl }}
+    env:
+      # Read by infra/main.bicepparam.
+      SQL_ADMIN_GROUP_NAME: ${{ vars.SQL_ADMIN_GROUP_NAME }}
+      SQL_ADMIN_GROUP_OBJECT_ID: ${{ vars.SQL_ADMIN_GROUP_OBJECT_ID }}
+      ENTRA_API_CLIENT_ID: ${{ vars.ENTRA_API_CLIENT_ID }}
+      BUDGET_EMAIL: ${{ vars.BUDGET_EMAIL }}
+      BUDGET_START_DATE: ${{ vars.BUDGET_START_DATE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-if (changes are shown in the log before they are made)
+        run: |
+          az deployment group what-if --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep --parameters infra/main.bicepparam
+
+      - name: Deploy
+        id: deploy
+        run: |
+          az deployment group create --resource-group "$RESOURCE_GROUP" \
+            --name "raceshop-${GITHUB_RUN_NUMBER}" \
+            --template-file infra/main.bicep --parameters infra/main.bicepparam \
+            --query properties.outputs --output json > outputs.json
+          jq -r 'to_entries[] | "\(.key)=\(.value.value)"' outputs.json >> "$GITHUB_OUTPUT"
+
+  api:
+    name: API (migrate, deploy, smoke test)
+    needs: infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      API_NAME: ${{ needs.infrastructure.outputs.api-name }}
+      API_URL: ${{ needs.infrastructure.outputs.api-url }}
+      API_IDENTITY_NAME: ${{ needs.infrastructure.outputs.api-identity-name }}
+      API_IDENTITY_CLIENT_ID: ${{ needs.infrastructure.outputs.api-identity-client-id }}
+      SQL_SERVER: ${{ needs.infrastructure.outputs.sql-server-name }}
+      SQL_FQDN: ${{ needs.infrastructure.outputs.sql-server-fqdn }}
+      DATABASE: ${{ needs.infrastructure.outputs.database-name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: api/**/packages.lock.json
+
+      - name: Build and publish
+        run: |
+          dotnet restore api/RaceShop.slnx --locked-mode
+          dotnet publish api/src/RaceShop.Api --configuration Release --no-restore --output publish
+          dotnet tool restore
+          dotnet ef migrations bundle --project api/src/RaceShop.Infrastructure \
+            --startup-project api/src/RaceShop.Infrastructure --configuration Release --output efbundle --force
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # The SQL firewall admits only the API's addresses. Let this runner in for the migration only.
+      - name: Open the SQL firewall to this runner
+        run: |
+          ip="$(curl -fsS https://api.ipify.org)"
+          az sql server firewall-rule create --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "deploy-run-${GITHUB_RUN_ID}" --start-ip-address "$ip" --end-ip-address "$ip" --output none
+
+      # Runs as the deploy identity, a member of the SQL admin group (Entra ID token from az login).
+      - name: Apply database migrations
+        run: |
+          ./efbundle --connection "Server=tcp:${SQL_FQDN},1433;Database=${DATABASE};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=120;"
+
+      # Least privilege: the API reads and writes data; only the pipeline changes the schema.
+      # WITH SID uses the identity's client ID, so no directory-read permission is needed.
+      - name: Grant the API's managed identity read/write access
+        run: |
+          # go-sqlcmd from the Microsoft package feed that GitHub's Ubuntu runners already trust.
+          sudo apt-get update -qq && sudo apt-get install -y -qq sqlcmd
+          sqlcmd -S "tcp:${SQL_FQDN},1433" -d "$DATABASE" \
+            --authentication-method ActiveDirectoryDefault -b -Q "
+              IF DATABASE_PRINCIPAL_ID('${API_IDENTITY_NAME}') IS NULL
+              BEGIN
+                DECLARE @sid NVARCHAR(100) = CONVERT(NVARCHAR(100), CAST(CAST('${API_IDENTITY_CLIENT_ID}' AS UNIQUEIDENTIFIER) AS VARBINARY(16)), 1);
+                EXEC('CREATE USER [${API_IDENTITY_NAME}] WITH SID = ' + @sid + ', TYPE = E');
+              END;
+              ALTER ROLE db_datareader ADD MEMBER [${API_IDENTITY_NAME}];
+              ALTER ROLE db_datawriter ADD MEMBER [${API_IDENTITY_NAME}];"
+
+      - name: Close the SQL firewall
+        if: always()
+        run: |
+          az sql server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "deploy-run-${GITHUB_RUN_ID}" --output none || true
+
+      - uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
+        with:
+          app-name: ${{ needs.infrastructure.outputs.api-name }}
+          package: publish
+
+      # F1 sleeps when idle and SQL may be paused: allow a few minutes for the first response.
+      - name: Smoke test
+        run: |
+          for path in /health /health/ready /openapi/v1.json; do
+            curl -fsS --retry 10 --retry-delay 15 --retry-all-errors --max-time 120 "${API_URL}${path}" -o /dev/null
+            echo "✓ ${path}"
+          done
+          status="$(curl -s -o /dev/null -w '%{http_code}' "${API_URL}/api/parts")"
+          [ "$status" = "401" ] || { echo "::error::Expected 401 without a token, got $status"; exit 1; }
+          echo "✓ /api/parts requires sign-in"
+
+  web:
+    name: Web app (Static Web App)
+    needs: [infrastructure, api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VITE_AUTH_MODE: entra
+      VITE_API_BASE_URL: ${{ needs.infrastructure.outputs.api-url }}
+      VITE_ENTRA_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      VITE_ENTRA_CLIENT_ID: ${{ vars.ENTRA_SPA_CLIENT_ID }}
+      VITE_API_SCOPE: ${{ vars.API_SCOPE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @raceshop/web... build
+      - name: Bundle budget, and no development sign-in in what we ship
+        run: pnpm bundle:check
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Read with the OIDC login at deploy time and masked, so it is never stored as a GitHub secret.
+      - name: Get the deployment token
+        id: token
+        run: |
+          token="$(az staticwebapp secrets list --name "${{ needs.infrastructure.outputs.web-name }}" \
+            --resource-group "$RESOURCE_GROUP" --query properties.apiKey --output tsv)"
+          echo "::add-mask::$token"
+          echo "value=$token" >> "$GITHUB_OUTPUT"
+
+      - uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
+        with:
+          action: upload
+          azure_static_web_apps_api_token: ${{ steps.token.outputs.value }}
+          app_location: apps/web/dist
+          skip_app_build: true
+          skip_api_build: true
+
+  storybook:
+    name: Storybook (Static Web App)
+    needs: infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @raceshop/storybook... build
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get the deployment token
+        id: token
+        run: |
+          token="$(az staticwebapp secrets list --name "${{ needs.infrastructure.outputs.storybook-name }}" \
+            --resource-group "$RESOURCE_GROUP" --query properties.apiKey --output tsv)"
+          echo "::add-mask::$token"
+          echo "value=$token" >> "$GITHUB_OUTPUT"
+
+      - uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
+        with:
+          action: upload
+          azure_static_web_apps_api_token: ${{ steps.token.outputs.value }}
+          app_location: apps/storybook/storybook-static
+          skip_app_build: true
+          skip_api_build: true
+
+  summary:
+    name: Deployment summary
+    needs: [infrastructure, api, web, storybook]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Links
+        run: |
+          {
+            echo "### Deployed $GITHUB_SHA"
+            echo "- Web app: ${{ needs.infrastructure.outputs.web-url }}"
+            echo "- Storybook: ${{ needs.infrastructure.outputs.storybook-url }}"
+            echo "- API: ${{ needs.infrastructure.outputs.api-url }}/openapi/v1.json"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -130,6 +130,7 @@ scripts/             repo tooling (no dependencies)
 | Type-check / test / build | `pnpm typecheck`, `pnpm test`, `pnpm build`                                                         |
 | API contract changed      | `pnpm api:contract` (refreshes openapi.json and the generated client; commit both)                  |
 | Bundle-size budget        | `pnpm build && pnpm bundle:check` (budgets in `apps/web/bundle-budget.json`)                        |
+| Check the Bicep           | `az bicep lint --file infra/main.bicep` (CI also compiles `infra/main.bicepparam`)                  |
 | Accessibility of stories  | `pnpm --filter @raceshop/storybook build && pnpm --filter @raceshop/storybook test:a11y`            |
 
 ## 4. Quality gates
@@ -226,3 +227,15 @@ See [docs/auth/entra-setup.md](docs/auth/entra-setup.md).
 > The installer is not code-signed (certificates cost money; this project stays on free tiers), so
 > Windows SmartScreen warns on first run. Verify a download with
 > `gh attestation verify <installer>.exe --repo <owner>/<repo>` or the published `SHA256SUMS.txt`.
+
+## 10. Deployment
+
+`main` deploys itself: [deploy.yml](.github/workflows/deploy.yml) shows a what-if, applies the Bicep
+in [infra/](infra), migrates the database, and deploys the API, the web app and Storybook to Azure
+free tiers (ADR 0010). Pull requests never deploy; CI only compiles and lints the Bicep. The
+one-time Azure and GitHub setup (OIDC, no stored credentials) is in
+[docs/deploy/azure-setup.md](docs/deploy/azure-setup.md).
+
+Schema changes deploy with the code, so a migration must keep the **previous** API version working
+(add a column before using it, stop using it before dropping it). Rollback is a redeploy of an
+earlier version, which does not undo migrations.
