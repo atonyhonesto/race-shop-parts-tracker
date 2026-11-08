@@ -152,6 +152,28 @@ jobs:
             apps/desktop/playwright-report
           retention-days: 7
 
+  # Compiles the Bicep and its parameter file and runs the linter (bicepconfig.json makes the
+  # important rules errors). Needs no Azure login: nothing is deployed from pull requests.
+  infrastructure:
+    name: Bicep build and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Placeholders so main.bicepparam compiles; real values come from the production environment.
+      SQL_ADMIN_GROUP_NAME: raceshop-sql-admins
+      SQL_ADMIN_GROUP_OBJECT_ID: 00000000-0000-0000-0000-000000000001
+      ENTRA_API_CLIENT_ID: 00000000-0000-0000-0000-000000000002
+      BUDGET_EMAIL: ci@example.com
+      BUDGET_START_DATE: '2026-11-01'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: az bicep install
+      - run: az bicep lint --file infra/main.bicep
+      - run: az bicep build --file infra/main.bicep --stdout > /dev/null
+      - run: az bicep build-params --file infra/main.bicepparam --stdout > /dev/null
+
   commits:
     name: Conventional commit messages
     if: github.event_name == 'pull_request'
@@ -179,7 +201,7 @@ jobs:
   ci-passed:
     name: CI passed
     if: always()
-    needs: [dotnet, typescript, e2e, commits]
+    needs: [dotnet, typescript, e2e, infrastructure, commits]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
