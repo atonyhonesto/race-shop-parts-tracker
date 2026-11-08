@@ -34,6 +34,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 !apps/web/.env.e2e
+!apps/desktop/.env.dev
 appsettings.*.local.json
 *.pfx
 *.publishsettings

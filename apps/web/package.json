@@ -19,7 +19,7 @@
     "@raceshop/screens": "workspace:*",
     "@raceshop/ui": "workspace:*",
     "@raceshop/ui-wc": "workspace:*",
-    "@tanstack/react-query": "^5.106.0",
+    "@tanstack/react-query": "^5.106.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^8.5.1"
