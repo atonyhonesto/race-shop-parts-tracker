@@ -9,6 +9,14 @@ import { Alert, Spinner } from '@raceshop/ui';
  * the connection is back. TanStack Query refetches everything on reconnect.
  */
 
+/**
+ * Call once at startup. TanStack Query assumes it starts online and only reacts to later
+ * online/offline events, so an app opened without a connection would think it was online.
+ */
+export function syncOnlineStatusWithBrowser(): void {
+  onlineManager.setOnline(navigator.onLine);
+}
+
 /** True while the browser (or Electron renderer) reports a network connection. */
 export function useOnlineStatus(): boolean {
   return useSyncExternalStore(

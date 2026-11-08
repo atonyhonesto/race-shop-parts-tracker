@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
-import { createQueryClient, routes } from '@raceshop/screens';
+import { createQueryClient, routes, syncOnlineStatusWithBrowser } from '@raceshop/screens';
 
 // VITE_AUTH_MODE is replaced at build time, so a production build (entra) contains no trace of
 // the development sign-in: the dead branch and its dynamic import are removed. CI checks this.
@@ -15,6 +15,7 @@ const { AuthProvider } =
     ? await import('./auth/dev')
     : await import('./auth/entra');
 
+syncOnlineStatusWithBrowser();
 const queryClient = createQueryClient();
 const router = createBrowserRouter(routes);
 

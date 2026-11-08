@@ -8,5 +8,10 @@ export { AuthContext, canManageInventory, hasAnyRole, toAppRoles, useAuth } from
 export type { AppRole, Auth, SignedInUser } from './auth/auth';
 export { DevSignIn } from './auth/DevSignIn';
 export { SignInLayout } from './auth/SignInLayout';
-export { OfflineBanner, PendingState, useOnlineStatus } from './offline/offline';
+export {
+  OfflineBanner,
+  PendingState,
+  syncOnlineStatusWithBrowser,
+  useOnlineStatus,
+} from './offline/offline';
 export { routes } from './router';
