@@ -21,7 +21,7 @@ import type { AppRole, Auth } from '@raceshop/screens';
 function requiredEnv(
   name: 'VITE_ENTRA_TENANT_ID' | 'VITE_ENTRA_CLIENT_ID' | 'VITE_API_SCOPE',
 ): string {
-  const value = import.meta.env[name] as string | undefined;
+  const value = import.meta.env[name];
   if (!value)
     throw new Error(`${name} is not set. See apps/web/.env.example and docs/auth/entra-setup.md.`);
   return value;
