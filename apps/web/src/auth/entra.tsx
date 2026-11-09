@@ -76,7 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 function EntraGate({ children }: { children: ReactNode }) {
   const { instance, accounts, inProgress } = useMsal();
-  const account = instance.getActiveAccount() ?? accounts[0] ?? null;
+  // getActiveAccount() returns a new object on every call. Key everything on the stable
+  // homeAccountId, or each render re-runs the token effect, and the constant re-renders starve
+  // React Router's initial (transition) render, leaving the app on its loading spinner.
+  const accountId = (instance.getActiveAccount() ?? accounts[0])?.homeAccountId ?? null;
+  const account = useMemo(
+    () => (accountId ? instance.getAccount({ homeAccountId: accountId }) : null),
+    [instance, accountId],
+  );
   const [roles, setRoles] = useState<{ account: string; roles: AppRole[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
