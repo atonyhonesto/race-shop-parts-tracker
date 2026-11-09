@@ -1,4 +1,5 @@
 /* Import once at the app root: tokens plus a small base layer. Components bring their own CSS modules. */
+@import '@fontsource-variable/overpass/wght.css';
 @import './tokens.css';
 
 *,

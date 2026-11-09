@@ -10,7 +10,8 @@
 :root {
   color-scheme: light;
 
-  --rs-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  /* Overpass: open-licensed (SIL OFL), bundled with the app, close to gm.com's lettering. */
+  --rs-font-sans: 'Overpass Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --rs-font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
   --rs-font-size-sm: 0.875rem;
   --rs-font-size-md: 1rem;
@@ -35,10 +36,11 @@
   --rs-color-border-subtle: #d1d9e0;
   --rs-color-text: #1f2328;
   --rs-color-text-muted: #59636e;
-  --rs-color-accent: #0969da;
-  --rs-color-accent-hover: #0757b8;
+  /* GM-inspired blue. White text on it is 6.3:1; as text on white it is 6.3:1 (AA). */
+  --rs-color-accent: #0047ff;
+  --rs-color-accent-hover: #0036c2;
   --rs-color-on-accent: #ffffff;
-  --rs-color-focus: #0969da;
+  --rs-color-focus: #0047ff;
 
   --rs-color-ok: #1a7f37;
   --rs-color-warning: #9a6700;
@@ -62,10 +64,10 @@
     --rs-color-border-subtle: #3d444d;
     --rs-color-text: #f0f6fc;
     --rs-color-text-muted: #9198a1;
-    --rs-color-accent: #4493f8;
-    --rs-color-accent-hover: #6cabfa;
+    --rs-color-accent: #6e8bff;
+    --rs-color-accent-hover: #9aaeff;
     --rs-color-on-accent: #0d1117;
-    --rs-color-focus: #4493f8;
+    --rs-color-focus: #6e8bff;
 
     --rs-color-ok: #3fb950;
     --rs-color-warning: #d29922;
@@ -89,10 +91,10 @@
   --rs-color-border-subtle: #3d444d;
   --rs-color-text: #f0f6fc;
   --rs-color-text-muted: #9198a1;
-  --rs-color-accent: #4493f8;
-  --rs-color-accent-hover: #6cabfa;
+  --rs-color-accent: #6e8bff;
+  --rs-color-accent-hover: #9aaeff;
   --rs-color-on-accent: #0d1117;
-  --rs-color-focus: #4493f8;
+  --rs-color-focus: #6e8bff;
 
   --rs-color-ok: #3fb950;
   --rs-color-warning: #d29922;

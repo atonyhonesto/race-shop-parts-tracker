@@ -16,6 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/overpass": "^5.3.0",
     "@raceshop/ui-wc": "workspace:*"
   },
   "devDependencies": {
