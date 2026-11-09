@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Loads sample data into a database that already has the schema (migrations run separately).
+    Used by .github/workflows/seed.yml for the deployed environment; the perf data set (docs/perf)
+    will be added here as another profile.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RaceShop.Infrastructure\RaceShop.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,84 @@
+# Loads sample data into the deployed database (Actions → Seed → Run workflow). Manual only.
+# The demo profile only adds data to an empty database, so running it twice changes nothing.
+# Same pattern as deploy.yml: OIDC sign-in, a temporary SQL firewall rule for this runner, and
+# Entra ID authentication as the SQL admins group. No passwords.
+name: Seed
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Data set to load
+        type: choice
+        options: [demo]
+        default: demo
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production # never run while a deployment is changing the database
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+
+jobs:
+  seed:
+    name: Seed (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: api/**/packages.lock.json
+
+      - run: dotnet build api/tools/RaceShop.Seed --configuration Release
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # The database the API uses right now, from the latest successful deployment.
+      - name: Find the database
+        run: |
+          outputs="$(az deployment group list --resource-group "$RESOURCE_GROUP" \
+            --query "sort_by([?starts_with(name, 'raceshop-') && properties.provisioningState=='Succeeded'], &properties.timestamp)[-1].properties.outputs" \
+            --output json)"
+          {
+            echo "SQL_SERVER=$(jq -r .sqlServerName.value <<< "$outputs")"
+            echo "SQL_FQDN=$(jq -r .sqlServerFqdn.value <<< "$outputs")"
+            echo "DATABASE=$(jq -r .databaseName.value <<< "$outputs")"
+          } >> "$GITHUB_ENV"
+
+      - name: Open the SQL firewall to this runner
+        run: |
+          ip="$(curl -fsS https://api.ipify.org)"
+          az sql server firewall-rule create --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "seed-run-${GITHUB_RUN_ID}" --start-ip-address "$ip" --end-ip-address "$ip" --output none
+
+      - name: Seed
+        run: >-
+          dotnet run --project api/tools/RaceShop.Seed --configuration Release --no-build --
+          --profile "${{ inputs.profile }}"
+          --connection "Server=tcp:${SQL_FQDN},1433;Database=${DATABASE};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=120;"
+
+      - name: Close the SQL firewall
+        if: always()
+        run: |
+          az sql server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "seed-run-${GITHUB_RUN_ID}" --output none || true
