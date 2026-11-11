@@ -21,6 +21,7 @@ Project overview, layout, commands, conventions, remaining work and gotchas live
 - Commit messages: Conventional Commits, header ≤ 72 chars, lowercase subject.
 
 ## Session history
+
 - Past session exports are in session-text/.
 - Do NOT read these files by default.
 - Only when a question involves an earlier decision, discussion, or
@@ -37,6 +38,7 @@ Work in this session is narrow: finishing the remaining items, fixing bugs,
 and making small refinements. Use as few tokens as possible.
 
 ### Context rules
+
 - Do NOT re-scan, re-read, or summarize the whole codebase or earlier
   conversation after each prompt. Assume everything outside the task
   works as built.
@@ -50,12 +52,15 @@ and making small refinements. Use as few tokens as possible.
   than reading broadly to find it.
 
 ### Remaining work
+
 <list the remaining 4% here, e.g.>
+
 1. ...
 2. ...
 3. ...
 
 ### Output rules
+
 - No restating my request, no plans for trivial changes, no recaps of
   what you did beyond 1-2 lines.
 - Show diffs/edits only, not full file contents.
@@ -64,6 +69,7 @@ and making small refinements. Use as few tokens as possible.
 - When a task is done, say "Done: <one line>" and stop.
 
 ### Stability
+
 - Do not refactor, rename, reformat, or "improve" code outside the
   task scope.
 - Follow existing patterns in the file you're editing.
